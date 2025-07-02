@@ -84,14 +84,15 @@ const Tasks = () => {
       filtered = filtered.filter(task => task.priority === priorityFilter);
     }
 
-    // Sort tasks
+// Sort tasks
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'dueDate':
           return new Date(a.dueDate) - new Date(b.dueDate);
-        case 'priority':
+        case 'priority': {
           const priorityOrder = { high: 3, medium: 2, low: 1 };
           return priorityOrder[b.priority] - priorityOrder[a.priority];
+        }
         case 'title':
           return a.title.localeCompare(b.title);
         default:

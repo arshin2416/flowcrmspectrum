@@ -86,16 +86,17 @@ const Leads = () => {
     }
 
     // Sort leads
-    filtered.sort((a, b) => {
+filtered.sort((a, b) => {
       switch (sortBy) {
         case 'score':
           return b.score - a.score;
         case 'created':
           return new Date(b.createdAt) - new Date(a.createdAt);
-        case 'name':
+        case 'name': {
           const contactA = contacts.find(c => c.Id === a.contactId);
           const contactB = contacts.find(c => c.Id === b.contactId);
           return contactA && contactB ? contactA.name.localeCompare(contactB.name) : 0;
+        }
         default:
           return 0;
       }
