@@ -498,11 +498,12 @@ useEffect(() => {
             >
               Cancel
             </Button>
-            <Button
+<Button
               type="submit"
               variant="primary"
               loading={isSubmitting}
-Create Lead
+            >
+              Create Lead
             </Button>
           </div>
         </form>
