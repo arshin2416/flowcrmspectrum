@@ -51,7 +51,7 @@ export const contactService = {
     return true;
   },
 
-  async search(query) {
+async search(query) {
     await delay(200);
     const searchQuery = query.toLowerCase();
     return contacts.filter(contact => 
@@ -59,5 +59,14 @@ export const contactService = {
       contact.email.toLowerCase().includes(searchQuery) ||
       contact.company.toLowerCase().includes(searchQuery)
     );
+  },
+
+  async getByEmail(email) {
+    await delay(200);
+    const contact = contacts.find(c => c.email.toLowerCase() === email.toLowerCase());
+    if (!contact) {
+      throw new Error('Contact not found');
+    }
+    return { ...contact };
   }
 };

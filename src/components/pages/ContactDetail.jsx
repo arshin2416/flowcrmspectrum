@@ -13,6 +13,7 @@ import { contactService } from '@/services/api/contactService';
 import { dealService } from '@/services/api/dealService';
 import { taskService } from '@/services/api/taskService';
 import { activityService } from '@/services/api/activityService';
+import EmailComposer from '@/components/organisms/EmailComposer';
 
 const ContactDetail = () => {
   const { id } = useParams();
@@ -23,6 +24,7 @@ const ContactDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const loadContactData = async () => {
     try {
@@ -96,11 +98,12 @@ const ContactDetail = () => {
     note: 'FileText'
   };
 
-  const tabs = [
+const tabs = [
     { id: 'overview', label: 'Overview', icon: 'User' },
     { id: 'deals', label: `Deals (${deals.length})`, icon: 'TrendingUp' },
     { id: 'tasks', label: `Tasks (${tasks.filter(t => t.status === 'pending').length})`, icon: 'CheckSquare' },
-    { id: 'activities', label: `Activities (${activities.length})`, icon: 'Clock' }
+    { id: 'activities', label: `Activities (${activities.length})`, icon: 'Clock' },
+    { id: 'emails', label: 'Emails', icon: 'Mail' }
   ];
 
   return (
@@ -135,19 +138,23 @@ const ContactDetail = () => {
 
       {/* Contact Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <motion.div
+<motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
+          className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setIsEmailModalOpen(true)}
         >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <ApperIcon name="Mail" className="w-5 h-5 text-blue-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <ApperIcon name="Mail" className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">Email</p>
+                <p className="text-sm font-medium text-slate-900">{contact.email}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-slate-500">Email</p>
-              <p className="text-sm font-medium text-slate-900">{contact.email}</p>
-            </div>
+            <ApperIcon name="ExternalLink" className="w-4 h-4 text-slate-400" />
           </div>
         </motion.div>
 
@@ -400,11 +407,50 @@ const ContactDetail = () => {
                     </motion.div>
                   ))}
                 </div>
-              )}
+)}
+            </div>
+          )}
+
+          {/* Emails Tab */}
+          {activeTab === 'emails' && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="text-lg font-medium text-slate-900">Email Conversations</h4>
+                <Button 
+                  variant="primary" 
+                  size="sm" 
+                  icon="Plus"
+                  onClick={() => setIsEmailModalOpen(true)}
+                >
+                  Compose Email
+                </Button>
+              </div>
+              <div className="text-center py-8">
+                <ApperIcon name="Mail" className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                <p className="text-slate-600">Email conversations will appear here</p>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  icon="Mail"
+                  className="mt-4"
+                  onClick={() => setIsEmailModalOpen(true)}
+                >
+                  Send First Email
+                </Button>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Email Composer Modal */}
+      {contact && (
+        <EmailComposer
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          contact={contact}
+        />
+      )}
     </div>
   );
 };

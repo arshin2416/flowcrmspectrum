@@ -1,0 +1,112 @@
+[
+  {
+    "Id": 1,
+    "contactId": 1,
+    "to": "john.doe@acmecorp.com",
+    "from": "you@company.com",
+    "subject": "Follow up on our meeting",
+    "content": "Hi John,\n\nThank you for taking the time to meet with us yesterday. I wanted to follow up on our discussion about the new project proposal.\n\nAs discussed, I'm attaching the initial requirements document for your review. Please let me know if you have any questions or would like to schedule another meeting to discuss further.\n\nLooking forward to hearing from you.\n\nBest regards",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "type": "sent",
+    "threadId": null
+  },
+  {
+    "Id": 2,
+    "contactId": 1,
+    "to": "you@company.com",
+    "from": "john.doe@acmecorp.com",
+    "subject": "Re: Follow up on our meeting",
+    "content": "Hi,\n\nThank you for the follow-up and the requirements document. I've reviewed it with my team and we have a few questions.\n\nCould we schedule a call for next week to discuss the timeline and budget in more detail?\n\nBest,\nJohn",
+    "timestamp": "2024-01-15T14:45:00Z",
+    "type": "received",
+    "threadId": 1
+  },
+  {
+    "Id": 3,
+    "contactId": 2,
+    "to": "jane.smith@techstart.io",
+    "from": "you@company.com",
+    "subject": "Introduction and Partnership Opportunity",
+    "content": "Dear Jane,\n\nI hope this email finds you well. I'm reaching out to introduce our company and explore potential partnership opportunities.\n\nWe've been following TechStart's impressive growth and believe there could be synergies between our organizations. Would you be interested in a brief call to discuss this further?\n\nI'm available next week and would be happy to work around your schedule.\n\nBest regards",
+    "timestamp": "2024-01-16T09:15:00Z",
+    "type": "sent",
+    "threadId": null
+  },
+  {
+    "Id": 4,
+    "contactId": 3,
+    "to": "mike.johnson@globaltrade.com",
+    "from": "you@company.com",
+    "subject": "Proposal for Q2 Campaign",
+    "content": "Hi Mike,\n\nAs promised, I'm sending over our proposal for the Q2 marketing campaign. The document includes:\n\n- Campaign strategy and objectives\n- Target audience analysis\n- Budget breakdown\n- Timeline and deliverables\n\nI believe this campaign will help GlobalTrade reach new markets effectively. Let's schedule a meeting to go through the details.\n\nPlease let me know your thoughts.\n\nCheers",
+    "timestamp": "2024-01-17T11:20:00Z",
+    "type": "sent",
+    "threadId": null
+  },
+  {
+    "Id": 5,
+    "contactId": 3,
+    "to": "you@company.com",
+    "from": "mike.johnson@globaltrade.com",
+    "subject": "Re: Proposal for Q2 Campaign",
+    "content": "Hi,\n\nThank you for the detailed proposal. The team is impressed with the strategy, particularly the audience segmentation approach.\n\nWe'd like to move forward with this. Can you prepare a contract for review?\n\nAlso, when would be the earliest we could start implementation?\n\nThanks,\nMike",
+    "timestamp": "2024-01-17T16:30:00Z",
+    "type": "received",
+    "threadId": 4
+  },
+  {
+    "Id": 6,
+    "contactId": 4,
+    "to": "sarah.wilson@retailplus.com",
+    "from": "you@company.com",
+    "subject": "Product Demo Request",
+    "content": "Dear Sarah,\n\nI understand you're looking for solutions to streamline your inventory management. Our platform has helped similar retail companies reduce costs by 25% and improve efficiency.\n\nWould you be interested in a personalized demo? I can show you exactly how our system would work with RetailPlus's current setup.\n\nI'm available for a 30-minute call this week or next. What works best for your schedule?\n\nBest regards",
+    "timestamp": "2024-01-18T08:45:00Z",
+    "type": "sent",
+    "threadId": null
+  },
+  {
+    "Id": 7,
+    "contactId": 5,
+    "to": "david.brown@healthcaresol.org",
+    "from": "you@company.com",
+    "subject": "Healthcare Compliance Solution",
+    "content": "Hi David,\n\nFollowing our conversation at the healthcare conference, I wanted to share some additional information about our compliance management platform.\n\nGiven the new regulations coming into effect next quarter, I thought this might be timely for HealthcareSol. Our solution has helped organizations like yours ensure 100% compliance while reducing administrative overhead.\n\nWould you like to see a case study from a similar organization?\n\nLooking forward to continuing our discussion.\n\nBest",
+    "timestamp": "2024-01-19T13:10:00Z",
+    "type": "sent",
+    "threadId": null
+  },
+  {
+    "Id": 8,
+    "contactId": 2,
+    "to": "you@company.com",
+    "from": "jane.smith@techstart.io",
+    "subject": "Re: Introduction and Partnership Opportunity",
+    "content": "Hi,\n\nThank you for reaching out. The partnership opportunity sounds interesting.\n\nI'd like to learn more about what you have in mind. Could you send over some information about your company and the specific areas where you see potential collaboration?\n\nOnce I review the materials, we can schedule a call.\n\nBest regards,\nJane",
+    "timestamp": "2024-01-19T15:25:00Z",
+    "type": "received",
+    "threadId": 3
+  },
+  {
+    "Id": 9,
+    "contactId": 1,
+    "to": "john.doe@acmecorp.com",
+    "from": "you@company.com",
+    "subject": "Meeting Confirmation - Project Timeline",
+    "content": "Hi John,\n\nGreat! I've scheduled our call for Tuesday, January 23rd at 2:00 PM EST.\n\nI'll send over the calendar invite shortly. In preparation for our discussion, I'll prepare:\n\n- Updated project timeline\n- Budget options\n- Resource allocation plan\n- Next steps outline\n\nIs there anything specific you'd like me to address during our call?\n\nTalk soon!",
+    "timestamp": "2024-01-20T10:15:00Z",
+    "type": "sent",
+    "threadId": 1
+  },
+  {
+    "Id": 10,
+    "contactId": 6,
+    "to": "you@company.com",
+    "from": "lisa.garcia@manufacturer.net",
+    "subject": "Inquiry about bulk pricing",
+    "content": "Hello,\n\nI'm writing to inquire about bulk pricing for your industrial equipment. We're a manufacturing company looking to upgrade our production line.\n\nCould you provide:\n- Volume pricing tiers\n- Delivery timelines\n- Warranty information\n- Installation support options\n\nWe're planning to make a decision by the end of the month.\n\nThank you,\nLisa Garcia\nProcurement Manager",
+    "timestamp": "2024-01-20T14:30:00Z",
+    "type": "received",
+    "threadId": null
+  }
+]

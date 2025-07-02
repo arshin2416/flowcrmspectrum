@@ -14,6 +14,7 @@ import Badge from '@/components/atoms/Badge';
 import Modal from '@/components/molecules/Modal';
 import FilterTabs from '@/components/molecules/FilterTabs';
 import { contactService } from '@/services/api/contactService';
+import EmailComposer from '@/components/organisms/EmailComposer';
 
 const Contacts = () => {
   const [contacts, setContacts] = useState([]);
@@ -21,6 +22,8 @@ const Contacts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
@@ -281,11 +284,20 @@ const Contacts = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {format(new Date(contact.createdAt), 'MMM dd, yyyy')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <Link to={`/contacts/${contact.Id}`}>
                           <Button variant="ghost" size="sm" icon="Eye" />
                         </Link>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          icon="Mail"
+                          onClick={() => {
+                            setSelectedContact(contact);
+                            setIsEmailModalOpen(true);
+                          }}
+                        />
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -372,11 +384,22 @@ const Contacts = () => {
             >
               Create Contact
             </Button>
-          </div>
+</div>
         </form>
       </Modal>
+
+      {/* Email Composer Modal */}
+      {selectedContact && (
+        <EmailComposer
+          isOpen={isEmailModalOpen}
+          onClose={() => {
+            setIsEmailModalOpen(false);
+            setSelectedContact(null);
+          }}
+          contact={selectedContact}
+        />
+      )}
     </div>
   );
 };
-
 export default Contacts;
