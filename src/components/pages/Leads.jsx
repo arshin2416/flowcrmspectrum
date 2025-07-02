@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
-import { toast } from 'react-toastify';
-import ApperIcon from '@/components/ApperIcon';
-import Loading from '@/components/ui/Loading';
-import Error from '@/components/ui/Error';
-import Empty from '@/components/ui/Empty';
-import Button from '@/components/atoms/Button';
-import Input from '@/components/atoms/Input';
-import Select from '@/components/atoms/Select';
-import Badge from '@/components/atoms/Badge';
-import Modal from '@/components/molecules/Modal';
-import FilterTabs from '@/components/molecules/FilterTabs';
-import { leadService } from '@/services/api/leadService';
-import { contactService } from '@/services/api/contactService';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { format } from "date-fns";
+import { toast } from "react-toastify";
+import FilterBuilder from "@/components/molecules/FilterBuilder";
+import { filterService } from "@/services/api/filterService";
+import ApperIcon from "@/components/ApperIcon";
+import Badge from "@/components/atoms/Badge";
+import Select from "@/components/atoms/Select";
+import Input from "@/components/atoms/Input";
+import Button from "@/components/atoms/Button";
+import FilterTabs from "@/components/molecules/FilterTabs";
+import Modal from "@/components/molecules/Modal";
+import Error from "@/components/ui/Error";
+import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
+import { contactService } from "@/services/api/contactService";
+import { leadService } from "@/services/api/leadService";
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
@@ -22,10 +24,13 @@ const Leads = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [sortBy, setSortBy] = useState('score');
+  const [savedFilters, setSavedFilters] = useState([]);
+  const [appliedFilter, setAppliedFilter] = useState(null);
   const [formData, setFormData] = useState({
     contactId: '',
     source: 'website',
@@ -35,17 +40,19 @@ const Leads = () => {
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadData = async () => {
+const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [leadsData, contactsData] = await Promise.all([
+      const [leadsData, contactsData, filtersData] = await Promise.all([
         leadService.getAll(),
-        contactService.getAll()
+        contactService.getAll(),
+        filterService.getByEntityType('leads')
       ]);
       setLeads(leadsData);
       setContacts(contactsData);
       setFilteredLeads(leadsData);
+      setSavedFilters(filtersData);
     } catch (err) {
       setError(err.message);
       toast.error('Failed to load leads data');
@@ -58,18 +65,25 @@ const Leads = () => {
     loadData();
   }, []);
 
-  useEffect(() => {
-    let filtered = [...leads];
+useEffect(() => {
+    let filtered = leads.map(lead => {
+      const contact = contacts.find(c => c.Id === lead.contactId);
+      return { ...lead, contact };
+    });
+
+    // Apply advanced filter if present
+    if (appliedFilter && appliedFilter.criteria) {
+      filtered = filterService.applyFilter(filtered, appliedFilter.criteria, 'leads');
+    }
 
     // Filter by search term
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(lead => {
-        const contact = contacts.find(c => c.Id === lead.contactId);
-        return contact && (
-          contact.name.toLowerCase().includes(searchLower) ||
-          contact.email.toLowerCase().includes(searchLower) ||
-          contact.company.toLowerCase().includes(searchLower) ||
+        return lead.contact && (
+          lead.contact.name.toLowerCase().includes(searchLower) ||
+          lead.contact.email.toLowerCase().includes(searchLower) ||
+          lead.contact.company.toLowerCase().includes(searchLower) ||
           lead.source.toLowerCase().includes(searchLower)
         );
       });
@@ -86,16 +100,14 @@ const Leads = () => {
     }
 
     // Sort leads
-filtered.sort((a, b) => {
+    filtered.sort((a, b) => {
       switch (sortBy) {
         case 'score':
           return b.score - a.score;
         case 'created':
           return new Date(b.createdAt) - new Date(a.createdAt);
         case 'name': {
-          const contactA = contacts.find(c => c.Id === a.contactId);
-          const contactB = contacts.find(c => c.Id === b.contactId);
-          return contactA && contactB ? contactA.name.localeCompare(contactB.name) : 0;
+          return a.contact && b.contact ? a.contact.name.localeCompare(b.contact.name) : 0;
         }
         default:
           return 0;
@@ -103,7 +115,7 @@ filtered.sort((a, b) => {
     });
 
     setFilteredLeads(filtered);
-  }, [leads, contacts, searchTerm, statusFilter, sourceFilter, sortBy]);
+  }, [leads, contacts, searchTerm, statusFilter, sourceFilter, sortBy, appliedFilter]);
 
   const validateForm = () => {
     const errors = {};
@@ -151,6 +163,29 @@ filtered.sort((a, b) => {
       toast.success('Lead status updated');
     } catch (err) {
       toast.error('Failed to update lead status');
+    }
+};
+
+  const handleAdvancedFilter = (filter) => {
+    setAppliedFilter(filter);
+    setIsAdvancedFilterOpen(false);
+    if (filter) {
+      toast.success(`Applied filter: ${filter.name}`);
+    }
+  };
+
+  const handleSavedFilterChange = async (filterId) => {
+    if (!filterId) {
+      setAppliedFilter(null);
+      return;
+    }
+
+    try {
+      const filter = await filterService.getById(parseInt(filterId));
+      setAppliedFilter(filter);
+      toast.success(`Applied filter: ${filter.name}`);
+    } catch (err) {
+      toast.error('Failed to apply saved filter');
     }
   };
 
@@ -205,9 +240,9 @@ filtered.sort((a, b) => {
         </Button>
       </div>
 
-      {/* Filters */}
+{/* Filters */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Input
             placeholder="Search leads..."
             value={searchTerm}
@@ -234,6 +269,25 @@ filtered.sort((a, b) => {
               { value: 'created', label: 'Sort by Created Date' },
               { value: 'name', label: 'Sort by Name' }
             ]}
+          />
+          <Button
+            variant="secondary"
+            icon="Filter"
+            onClick={() => setIsAdvancedFilterOpen(true)}
+          >
+            Advanced Filters
+          </Button>
+          <Select
+            value={appliedFilter?.Id || ''}
+            onChange={(e) => handleSavedFilterChange(e.target.value)}
+            options={[
+              { value: '', label: 'All Leads' },
+              ...savedFilters.map(filter => ({
+                value: filter.Id.toString(),
+                label: filter.name
+              }))
+            ]}
+            placeholder="Saved Filters"
           />
         </div>
         
@@ -448,12 +502,19 @@ filtered.sort((a, b) => {
               type="submit"
               variant="primary"
               loading={isSubmitting}
-            >
-              Create Lead
+Create Lead
             </Button>
           </div>
         </form>
       </Modal>
+
+      {/* Advanced Filter Builder Modal */}
+      <FilterBuilder
+        isOpen={isAdvancedFilterOpen}
+        onClose={() => setIsAdvancedFilterOpen(false)}
+        entityType="leads"
+        onApplyFilter={handleAdvancedFilter}
+      />
     </div>
   );
 };

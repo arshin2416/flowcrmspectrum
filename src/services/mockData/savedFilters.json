@@ -1,0 +1,108 @@
+[
+  {
+    "Id": 1,
+    "name": "High Priority Prospects",
+    "description": "Active prospects from high-value companies",
+    "entityType": "contacts",
+    "criteria": [
+      {
+        "field": "status",
+        "operator": "equals",
+        "value": "prospect"
+      },
+      {
+        "field": "company",
+        "operator": "contains",
+        "value": "Tech"
+      }
+    ],
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z"
+  },
+  {
+    "Id": 2,
+    "name": "Recent Contacts",
+    "description": "Contacts added in the last 30 days",
+    "entityType": "contacts",
+    "criteria": [
+      {
+        "field": "createdAt",
+        "operator": "after",
+        "value": "2024-01-01"
+      }
+    ],
+    "createdAt": "2024-01-20T14:15:00.000Z",
+    "updatedAt": "2024-01-20T14:15:00.000Z"
+  },
+  {
+    "Id": 3,
+    "name": "High Score Leads",
+    "description": "Qualified leads with score above 80",
+    "entityType": "leads",
+    "criteria": [
+      {
+        "field": "score",
+        "operator": "greater_than",
+        "value": "80"
+      },
+      {
+        "field": "status",
+        "operator": "equals",
+        "value": "qualified"
+      }
+    ],
+    "createdAt": "2024-01-18T09:45:00.000Z",
+    "updatedAt": "2024-01-18T09:45:00.000Z"
+  },
+  {
+    "Id": 4,
+    "name": "LinkedIn Leads",
+    "description": "All leads sourced from LinkedIn",
+    "entityType": "leads",
+    "criteria": [
+      {
+        "field": "source",
+        "operator": "equals",
+        "value": "linkedin"
+      }
+    ],
+    "createdAt": "2024-01-22T16:20:00.000Z",
+    "updatedAt": "2024-01-22T16:20:00.000Z"
+  },
+  {
+    "Id": 5,
+    "name": "Large Deals",
+    "description": "Deals with value over $50,000",
+    "entityType": "deals",
+    "criteria": [
+      {
+        "field": "value",
+        "operator": "greater_than",
+        "value": "50000"
+      }
+    ],
+    "createdAt": "2024-01-25T11:30:00.000Z",
+    "updatedAt": "2024-01-25T11:30:00.000Z"
+  },
+  {
+    "Id": 6,
+    "name": "Closing This Month",
+    "description": "Deals expected to close in current month",
+    "entityType": "deals",
+    "criteria": [
+      {
+        "field": "expectedClose",
+        "operator": "between",
+        "value": "2024-02-01",
+        "value2": "2024-02-29"
+      },
+      {
+        "field": "stage",
+        "operator": "not_equals",
+        "value": "closed-lost"
+      }
+    ],
+    "createdAt": "2024-02-01T08:00:00.000Z",
+    "updatedAt": "2024-02-01T08:00:00.000Z"
+  }
+]

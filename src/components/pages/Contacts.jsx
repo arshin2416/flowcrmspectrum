@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
-import { toast } from 'react-toastify';
-import ApperIcon from '@/components/ApperIcon';
-import Loading from '@/components/ui/Loading';
-import Error from '@/components/ui/Error';
-import Empty from '@/components/ui/Empty';
-import Button from '@/components/atoms/Button';
-import Input from '@/components/atoms/Input';
-import Select from '@/components/atoms/Select';
-import Badge from '@/components/atoms/Badge';
-import Modal from '@/components/molecules/Modal';
-import FilterTabs from '@/components/molecules/FilterTabs';
-import { contactService } from '@/services/api/contactService';
-import EmailComposer from '@/components/organisms/EmailComposer';
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { format } from "date-fns";
+import { toast } from "react-toastify";
+import FilterBuilder from "@/components/molecules/FilterBuilder";
+import { filterService } from "@/services/api/filterService";
+import ApperIcon from "@/components/ApperIcon";
+import EmailComposer from "@/components/organisms/EmailComposer";
+import Badge from "@/components/atoms/Badge";
+import Select from "@/components/atoms/Select";
+import Input from "@/components/atoms/Input";
+import Button from "@/components/atoms/Button";
+import FilterTabs from "@/components/molecules/FilterTabs";
+import Modal from "@/components/molecules/Modal";
+import Error from "@/components/ui/Error";
+import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
+import { contactService } from "@/services/api/contactService";
 
 const Contacts = () => {
   const [contacts, setContacts] = useState([]);
@@ -23,10 +25,13 @@ const Contacts = () => {
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
+  const [savedFilters, setSavedFilters] = useState([]);
+  const [appliedFilter, setAppliedFilter] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -38,13 +43,17 @@ const Contacts = () => {
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadContacts = async () => {
+const loadContacts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const contactsData = await contactService.getAll();
+      const [contactsData, filtersData] = await Promise.all([
+        contactService.getAll(),
+        filterService.getByEntityType('contacts')
+      ]);
       setContacts(contactsData);
       setFilteredContacts(contactsData);
+      setSavedFilters(filtersData);
     } catch (err) {
       setError(err.message);
       toast.error('Failed to load contacts');
@@ -57,8 +66,13 @@ const Contacts = () => {
     loadContacts();
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     let filtered = [...contacts];
+
+    // Apply advanced filter if present
+    if (appliedFilter && appliedFilter.criteria) {
+      filtered = filterService.applyFilter(filtered, appliedFilter.criteria, 'contacts');
+    }
 
     // Filter by search term
     if (searchTerm) {
@@ -89,7 +103,7 @@ const Contacts = () => {
     });
 
     setFilteredContacts(filtered);
-  }, [contacts, searchTerm, statusFilter, sortBy]);
+  }, [contacts, searchTerm, statusFilter, sortBy, appliedFilter]);
 
   const validateForm = () => {
     const errors = {};
@@ -129,7 +143,7 @@ const Contacts = () => {
     }
   };
 
-  const handleDelete = async (contactId) => {
+const handleDelete = async (contactId) => {
     if (!window.confirm('Are you sure you want to delete this contact?')) return;
 
     try {
@@ -138,6 +152,29 @@ const Contacts = () => {
       toast.success('Contact deleted successfully');
     } catch (err) {
       toast.error('Failed to delete contact');
+    }
+  };
+
+  const handleAdvancedFilter = (filter) => {
+    setAppliedFilter(filter);
+    setIsAdvancedFilterOpen(false);
+    if (filter) {
+      toast.success(`Applied filter: ${filter.name}`);
+    }
+  };
+
+  const handleSavedFilterChange = async (filterId) => {
+    if (!filterId) {
+      setAppliedFilter(null);
+      return;
+    }
+
+    try {
+      const filter = await filterService.getById(parseInt(filterId));
+      setAppliedFilter(filter);
+      toast.success(`Applied filter: ${filter.name}`);
+    } catch (err) {
+      toast.error('Failed to apply saved filter');
     }
   };
 
@@ -153,7 +190,6 @@ const Contacts = () => {
     prospect: 'warning', 
     inactive: 'default'
   };
-
   if (loading) return <Loading type="table" />;
   if (error) return <Error message={error} onRetry={loadContacts} />;
 
@@ -170,13 +206,13 @@ const Contacts = () => {
           icon="Plus"
           onClick={() => setIsModalOpen(true)}
         >
-          Add Contact
+Add Contact
         </Button>
       </div>
 
       {/* Filters */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Input
             placeholder="Search contacts..."
             value={searchTerm}
@@ -192,11 +228,30 @@ const Contacts = () => {
               { value: 'created', label: 'Sort by Created Date' }
             ]}
           />
+          <Button
+            variant="secondary"
+            icon="Filter"
+            onClick={() => setIsAdvancedFilterOpen(true)}
+          >
+            Advanced Filters
+          </Button>
+          <Select
+            value={appliedFilter?.Id || ''}
+            onChange={(e) => handleSavedFilterChange(e.target.value)}
+            options={[
+              { value: '', label: 'All Contacts' },
+              ...savedFilters.map(filter => ({
+                value: filter.Id.toString(),
+                label: filter.name
+              }))
+            ]}
+            placeholder="Saved Filters"
+          />
         </div>
         
         <FilterTabs
           tabs={statusTabs}
-          activeTab={statusFilter}
+activeTab={statusFilter}
           onTabChange={setStatusFilter}
         />
       </div>
@@ -381,10 +436,10 @@ const Contacts = () => {
               type="submit"
               variant="primary"
               loading={isSubmitting}
-            >
+>
               Create Contact
             </Button>
-</div>
+          </div>
         </form>
       </Modal>
 
@@ -395,10 +450,17 @@ const Contacts = () => {
           onClose={() => {
             setIsEmailModalOpen(false);
             setSelectedContact(null);
-          }}
+}}
           contact={selectedContact}
         />
       )}
+      {/* Advanced Filter Builder Modal */}
+      <FilterBuilder
+        isOpen={isAdvancedFilterOpen}
+        onClose={() => setIsAdvancedFilterOpen(false)}
+        entityType="contacts"
+        onApplyFilter={handleAdvancedFilter}
+      />
     </div>
   );
 };

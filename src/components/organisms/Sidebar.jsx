@@ -9,6 +9,7 @@ const navigation = [
   { name: 'Leads', href: '/leads', icon: 'Target' },
   { name: 'Deals', href: '/deals', icon: 'TrendingUp' },
   { name: 'Tasks', href: '/tasks', icon: 'CheckSquare' },
+  { name: 'Saved Filters', href: '/filters', icon: 'Filter' },
 ];
 
 const Sidebar = ({ isOpen, onClose }) => {

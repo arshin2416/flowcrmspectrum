@@ -1,25 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
-import { toast } from 'react-toastify';
-import ApperIcon from '@/components/ApperIcon';
-import Loading from '@/components/ui/Loading';
-import Error from '@/components/ui/Error';
-import Empty from '@/components/ui/Empty';
-import Button from '@/components/atoms/Button';
-import Input from '@/components/atoms/Input';
-import Select from '@/components/atoms/Select';
-import Badge from '@/components/atoms/Badge';
-import Modal from '@/components/molecules/Modal';
-import { dealService } from '@/services/api/dealService';
-import { contactService } from '@/services/api/contactService';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { format } from "date-fns";
+import { toast } from "react-toastify";
+import FilterBuilder from "@/components/molecules/FilterBuilder";
+import { filterService } from "@/services/api/filterService";
+import ApperIcon from "@/components/ApperIcon";
+import Badge from "@/components/atoms/Badge";
+import Select from "@/components/atoms/Select";
+import Input from "@/components/atoms/Input";
+import Button from "@/components/atoms/Button";
+import Modal from "@/components/molecules/Modal";
+import Error from "@/components/ui/Error";
+import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
+import { contactService } from "@/services/api/contactService";
+import { dealService } from "@/services/api/dealService";
 
 const Deals = () => {
   const [deals, setDeals] = useState([]);
   const [contacts, setContacts] = useState([]);
+  const [filteredDeals, setFilteredDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
+  const [savedFilters, setSavedFilters] = useState([]);
+  const [appliedFilter, setAppliedFilter] = useState(null);
   const [formData, setFormData] = useState({
     contactId: '',
     title: '',
@@ -41,16 +47,19 @@ const Deals = () => {
     { id: 'closed-lost', name: 'Closed Lost', color: 'bg-red-500' }
   ];
 
-  const loadData = async () => {
+const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [dealsData, contactsData] = await Promise.all([
+      const [dealsData, contactsData, filtersData] = await Promise.all([
         dealService.getAll(),
-        contactService.getAll()
+        contactService.getAll(),
+        filterService.getByEntityType('deals')
       ]);
       setDeals(dealsData);
       setContacts(contactsData);
+      setFilteredDeals(dealsData);
+      setSavedFilters(filtersData);
     } catch (err) {
       setError(err.message);
       toast.error('Failed to load deals data');
@@ -59,9 +68,23 @@ const Deals = () => {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    let filtered = deals.map(deal => {
+      const contact = contacts.find(c => c.Id === deal.contactId);
+      return { ...deal, contact };
+    });
+
+    // Apply advanced filter if present
+    if (appliedFilter && appliedFilter.criteria) {
+      filtered = filterService.applyFilter(filtered, appliedFilter.criteria, 'deals');
+    }
+
+    setFilteredDeals(filtered);
+  }, [deals, contacts, appliedFilter]);
 
   const validateForm = () => {
     const errors = {};
@@ -119,7 +142,7 @@ const Deals = () => {
     if (!draggedDeal || draggedDeal.stage === targetStage) {
       setDraggedDeal(null);
       return;
-    }
+}
 
     try {
       await dealService.updateStage(draggedDeal.Id, targetStage);
@@ -134,12 +157,35 @@ const Deals = () => {
     }
   };
 
+  const handleAdvancedFilter = (filter) => {
+    setAppliedFilter(filter);
+    setIsAdvancedFilterOpen(false);
+    if (filter) {
+      toast.success(`Applied filter: ${filter.name}`);
+    }
+  };
+
+  const handleSavedFilterChange = async (filterId) => {
+    if (!filterId) {
+      setAppliedFilter(null);
+      return;
+    }
+
+    try {
+      const filter = await filterService.getById(parseInt(filterId));
+      setAppliedFilter(filter);
+      toast.success(`Applied filter: ${filter.name}`);
+    } catch (err) {
+      toast.error('Failed to apply saved filter');
+    }
+  };
+
   const getContactById = (contactId) => {
     return contacts.find(c => c.Id === contactId);
   };
 
   const getDealsByStage = (stageId) => {
-    return deals.filter(deal => deal.stage === stageId);
+    return filteredDeals.filter(deal => deal.stage === stageId);
   };
 
   const getStageValue = (stageId) => {
@@ -150,7 +196,7 @@ const Deals = () => {
   if (error) return <Error message={error} onRetry={loadData} />;
 
   return (
-    <div className="p-6 space-y-6">
+<div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -166,6 +212,31 @@ const Deals = () => {
         </Button>
       </div>
 
+      {/* Filters */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button
+            variant="secondary"
+            icon="Filter"
+            onClick={() => setIsAdvancedFilterOpen(true)}
+          >
+            Advanced Filters
+          </Button>
+          <Select
+            value={appliedFilter?.Id || ''}
+            onChange={(e) => handleSavedFilterChange(e.target.value)}
+            options={[
+              { value: '', label: 'All Deals' },
+              ...savedFilters.map(filter => ({
+                value: filter.Id.toString(),
+                label: filter.name
+              }))
+            ]}
+            placeholder="Saved Filters"
+          />
+        </div>
+      </div>
+
       {/* Pipeline Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <motion.div
@@ -173,10 +244,10 @@ const Deals = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
         >
-          <div className="flex items-center justify-between">
+<div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">Total Deals</p>
-              <p className="text-2xl font-bold text-slate-900 mt-2">{deals.length}</p>
+              <p className="text-2xl font-bold text-slate-900 mt-2">{filteredDeals.length}</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
               <ApperIcon name="TrendingUp" className="w-6 h-6 text-white" />
@@ -190,11 +261,11 @@ const Deals = () => {
           transition={{ delay: 0.1 }}
           className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
         >
-          <div className="flex items-center justify-between">
+<div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">Pipeline Value</p>
               <p className="text-2xl font-bold text-slate-900 mt-2">
-                ${deals.filter(d => !['closed-won', 'closed-lost'].includes(d.stage))
+                ${filteredDeals.filter(d => !['closed-won', 'closed-lost'].includes(d.stage))
                   .reduce((sum, deal) => sum + deal.value, 0).toLocaleString()}
               </p>
             </div>
@@ -244,9 +315,8 @@ const Deals = () => {
           </div>
         </motion.div>
       </div>
-
-      {/* Pipeline Board */}
-      {deals.length === 0 ? (
+{/* Pipeline Board */}
+      {filteredDeals.length === 0 ? (
         <Empty
           title="No deals in pipeline"
           message="Start tracking your sales opportunities by creating your first deal."
@@ -430,8 +500,16 @@ const Deals = () => {
               Create Deal
             </Button>
           </div>
-        </form>
+</form>
       </Modal>
+
+      {/* Advanced Filter Builder Modal */}
+      <FilterBuilder
+        isOpen={isAdvancedFilterOpen}
+        onClose={() => setIsAdvancedFilterOpen(false)}
+        entityType="deals"
+        onApplyFilter={handleAdvancedFilter}
+      />
     </div>
   );
 };
