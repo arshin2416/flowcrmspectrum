@@ -1,33 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import Sidebar from '@/components/organisms/Sidebar';
-import Header from '@/components/organisms/Header';
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import Sidebar from "@/components/organisms/Sidebar";
+import Header from "@/components/organisms/Header";
 
-const Layout = ({ children }) => {
+function Layout({ children }) {
+  // React hooks must be called unconditionally at top level
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Defensive checks for router context availability
+  const safeLocation = location || { pathname: '/', search: '', hash: '', state: null };
+  const safeNavigate = navigate || (() => console.warn('Navigation unavailable'));
+// State for sidebar toggle
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isRouterReady, setIsRouterReady] = useState(false);
   
-  // Safe router hooks with error handling
-  let location, navigate;
-  try {
-    location = useLocation();
-    navigate = useNavigate();
-    
-    // Ensure location object has required properties
-    if (location && typeof location.pathname === 'string') {
-      setIsRouterReady(true);
-    }
-  } catch (error) {
-    console.error('Router context error:', error);
-    location = { pathname: '/', search: '', hash: '', state: null };
-    navigate = () => console.warn('Navigation unavailable');
-  }
-
   useEffect(() => {
     // Verify router is working properly
-    if (location?.pathname) {
-      setIsRouterReady(true);
-    } else {
+    if (!location?.pathname) {
       console.warn('Location pathname not available, router may not be initialized');
     }
   }, [location]);
@@ -36,7 +25,7 @@ const Layout = ({ children }) => {
     console.log('Global search:', searchTerm);
     // TODO: Implement global search functionality
     try {
-      if (searchTerm && navigate) {
+      if (searchTerm && safeNavigate) {
         // Safe navigation with error handling
         console.log('Search would navigate with term:', searchTerm);
       }
@@ -44,19 +33,6 @@ const Layout = ({ children }) => {
       console.error('Search navigation error:', error);
     }
   };
-
-  // Show loading state if router isn't ready
-  if (!isRouterReady) {
-    return (
-      <div className="flex h-screen bg-background items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-secondary text-sm">Initializing...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen bg-background">
       <Sidebar 
