@@ -1,21 +1,22 @@
-import React from "react";
-import { Route, Router, Routes } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import FilterManager from "@/components/pages/FilterManager";
-import Contacts from "@/components/pages/Contacts";
-import ContactDetail from "@/components/pages/ContactDetail";
-import Dashboard from "@/components/pages/Dashboard";
-import Tasks from "@/components/pages/Tasks";
-import Deals from "@/components/pages/Deals";
-import Leads from "@/components/pages/Leads";
-import Layout from "@/components/organisms/Layout";
+import React from 'react'
+import { Route, BrowserRouter, Routes } from "react-router-dom";
+import { ToastContainer } from 'react-toastify'
+import FilterManager from '@/components/pages/FilterManager'
+import Contacts from '@/components/pages/Contacts'
+import ContactDetail from '@/components/pages/ContactDetail'
+import Dashboard from '@/components/pages/Dashboard'
+import Tasks from '@/components/pages/Tasks'
+import Deals from '@/components/pages/Deals'
+import Leads from '@/components/pages/Leads'
+import Layout from '@/components/organisms/Layout'
 
 function App() {
   return (
-    <Router>
+<BrowserRouter>
       <div className="min-h-screen bg-background">
         <Layout>
-<Routes>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/filters" element={<FilterManager />} />
             <Route path="/contacts" element={<Contacts />} />
@@ -37,8 +38,8 @@ function App() {
           theme="light"
         />
       </div>
-    </Router>
-  );
+</BrowserRouter>
+  )
 }
 
 export default App;
