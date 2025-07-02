@@ -1,0 +1,47 @@
+[
+  {
+    "Id": 1,
+    "contactId": 1,
+    "title": "Enterprise Software License",
+    "value": 125000,
+    "stage": "negotiation",
+    "expectedClose": "2024-02-15T00:00:00Z",
+    "probability": 80
+  },
+  {
+    "Id": 2,
+    "contactId": 2,
+    "title": "Development Services Contract",
+    "value": 75000,
+    "stage": "proposal",
+    "expectedClose": "2024-02-28T00:00:00Z",
+    "probability": 60
+  },
+  {
+    "Id": 3,
+    "contactId": 3,
+    "title": "Financial Consulting Package",
+    "value": 200000,
+    "stage": "discovery",
+    "expectedClose": "2024-03-10T00:00:00Z",
+    "probability": 40
+  },
+  {
+    "Id": 4,
+    "contactId": 4,
+    "title": "Startup Advisory Services",
+    "value": 50000,
+    "stage": "closed-won",
+    "expectedClose": "2024-01-30T00:00:00Z",
+    "probability": 100
+  },
+  {
+    "Id": 5,
+    "contactId": 1,
+    "title": "Additional Training Package",
+    "value": 25000,
+    "stage": "qualified",
+    "expectedClose": "2024-03-15T00:00:00Z",
+    "probability": 30
+  }
+]

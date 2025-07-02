@@ -1,0 +1,62 @@
+[
+  {
+    "Id": 1,
+    "name": "Sarah Johnson",
+    "email": "sarah.johnson@techcorp.com",
+    "phone": "+1 (555) 123-4567",
+    "company": "TechCorp Solutions",
+    "status": "active",
+    "tags": ["enterprise", "decision-maker"],
+    "createdAt": "2024-01-15T10:30:00Z"
+  },
+  {
+    "Id": 2,
+    "name": "Michael Chen",
+    "email": "m.chen@innovateplus.com",
+    "phone": "+1 (555) 234-5678",
+    "company": "InnovatePlus",
+    "status": "active",
+    "tags": ["startup", "technical"],
+    "createdAt": "2024-01-18T14:45:00Z"
+  },
+  {
+    "Id": 3,
+    "name": "Emily Rodriguez",
+    "email": "emily.r@globalventures.com",
+    "phone": "+1 (555) 345-6789",
+    "company": "Global Ventures LLC",
+    "status": "prospect",
+    "tags": ["finance", "high-value"],
+    "createdAt": "2024-01-20T09:15:00Z"
+  },
+  {
+    "Id": 4,
+    "name": "David Kim",
+    "email": "david.kim@startupxyz.com",
+    "phone": "+1 (555) 456-7890",
+    "company": "StartupXYZ",
+    "status": "active",
+    "tags": ["startup", "referral"],
+    "createdAt": "2024-01-22T16:20:00Z"
+  },
+  {
+    "Id": 5,
+    "name": "Lisa Thompson",
+    "email": "lisa.thompson@megacorp.com",
+    "phone": "+1 (555) 567-8901",
+    "company": "MegaCorp Industries",
+    "status": "inactive",
+    "tags": ["enterprise", "procurement"],
+    "createdAt": "2024-01-12T11:00:00Z"
+  },
+  {
+    "Id": 6,
+    "name": "James Wilson",
+    "email": "jwilson@digitalfirst.com",
+    "phone": "+1 (555) 678-9012",
+    "company": "Digital First Agency",
+    "status": "prospect",
+    "tags": ["agency", "marketing"],
+    "createdAt": "2024-01-25T13:30:00Z"
+  }
+]

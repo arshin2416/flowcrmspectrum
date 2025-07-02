@@ -1,0 +1,70 @@
+[
+  {
+    "Id": 1,
+    "contactId": 1,
+    "type": "email",
+    "description": "Sent enterprise proposal documentation",
+    "timestamp": "2024-01-28T10:30:00Z",
+    "metadata": {
+      "subject": "Enterprise Software Proposal - TechCorp Solutions",
+      "attachments": ["proposal.pdf", "pricing.xlsx"]
+    }
+  },
+  {
+    "Id": 2,
+    "contactId": 1,
+    "type": "call",
+    "description": "Discovery call - 45 minutes",
+    "timestamp": "2024-01-25T14:00:00Z",
+    "metadata": {
+      "duration": 45,
+      "outcome": "positive",
+      "nextSteps": "Send proposal"
+    }
+  },
+  {
+    "Id": 3,
+    "contactId": 2,
+    "type": "meeting",
+    "description": "In-person meeting at InnovatePlus office",
+    "timestamp": "2024-01-22T09:00:00Z",
+    "metadata": {
+      "location": "InnovatePlus HQ",
+      "attendees": ["Michael Chen", "CTO", "Development Team Lead"]
+    }
+  },
+  {
+    "Id": 4,
+    "contactId": 3,
+    "type": "email",
+    "description": "Initial outreach - financial consulting services",
+    "timestamp": "2024-01-20T16:45:00Z",
+    "metadata": {
+      "subject": "Partnership Opportunity - Global Ventures LLC",
+      "response": "interested"
+    }
+  },
+  {
+    "Id": 5,
+    "contactId": 4,
+    "type": "call",
+    "description": "Contract negotiation call",
+    "timestamp": "2024-01-30T11:00:00Z",
+    "metadata": {
+      "duration": 30,
+      "outcome": "contract-signed",
+      "value": 50000
+    }
+  },
+  {
+    "Id": 6,
+    "contactId": 2,
+    "type": "email",
+    "description": "Technical requirements discussion",
+    "timestamp": "2024-01-26T13:15:00Z",
+    "metadata": {
+      "subject": "Re: Development Services Requirements",
+      "technical_lead_cc": true
+    }
+  }
+]
