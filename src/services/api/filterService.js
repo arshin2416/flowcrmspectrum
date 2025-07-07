@@ -1,67 +1,316 @@
-import savedFiltersData from '@/services/mockData/savedFilters.json';
-
-let savedFilters = [...savedFiltersData];
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const filterService = {
   async getAll() {
-    await delay(300);
-    return [...savedFilters];
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const params = {
+        fields: [
+          { field: { Name: "Name" } },
+          { field: { Name: "description" } },
+          { field: { Name: "entity_type" } },
+          { field: { Name: "criteria" } },
+          { field: { Name: "created_at" } },
+          { field: { Name: "updated_at" } },
+          { field: { Name: "CreatedOn" } }
+        ],
+        orderBy: [
+          { fieldName: "created_at", sorttype: "DESC" }
+        ]
+      };
+      
+      const response = await apperClient.fetchRecords('saved_filter', params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return (response.data || []).map(filter => ({
+        Id: filter.Id,
+        name: filter.Name,
+        description: filter.description,
+        entityType: filter.entity_type,
+        criteria: filter.criteria ? JSON.parse(filter.criteria) : [],
+        createdAt: filter.created_at || filter.CreatedOn,
+        updatedAt: filter.updated_at
+      }));
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error("Error fetching filters:", error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error("Error fetching filters:", error.message);
+        throw error;
+      }
+    }
   },
 
   async getById(id) {
-    await delay(200);
-    const filter = savedFilters.find(f => f.Id === parseInt(id));
-    if (!filter) {
-      throw new Error('Filter not found');
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const params = {
+        fields: [
+          { field: { Name: "Name" } },
+          { field: { Name: "description" } },
+          { field: { Name: "entity_type" } },
+          { field: { Name: "criteria" } },
+          { field: { Name: "created_at" } },
+          { field: { Name: "updated_at" } }
+        ]
+      };
+      
+      const response = await apperClient.getRecordById('saved_filter', parseInt(id), params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (!response.data) {
+        throw new Error('Filter not found');
+      }
+      
+      const filter = response.data;
+      return {
+        Id: filter.Id,
+        name: filter.Name,
+        description: filter.description,
+        entityType: filter.entity_type,
+        criteria: filter.criteria ? JSON.parse(filter.criteria) : [],
+        createdAt: filter.created_at,
+        updatedAt: filter.updated_at
+      };
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error(`Error fetching filter with ID ${id}:`, error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error(`Error fetching filter with ID ${id}:`, error.message);
+        throw error;
+      }
     }
-    return { ...filter };
   },
 
   async getByEntityType(entityType) {
-    await delay(200);
-    return savedFilters.filter(f => f.entityType === entityType);
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const params = {
+        fields: [
+          { field: { Name: "Name" } },
+          { field: { Name: "description" } },
+          { field: { Name: "entity_type" } },
+          { field: { Name: "criteria" } },
+          { field: { Name: "created_at" } },
+          { field: { Name: "updated_at" } }
+        ],
+        where: [
+          {
+            FieldName: "entity_type",
+            Operator: "EqualTo",
+            Values: [entityType]
+          }
+        ]
+      };
+      
+      const response = await apperClient.fetchRecords('saved_filter', params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return (response.data || []).map(filter => ({
+        Id: filter.Id,
+        name: filter.Name,
+        description: filter.description,
+        entityType: filter.entity_type,
+        criteria: filter.criteria ? JSON.parse(filter.criteria) : [],
+        createdAt: filter.created_at,
+        updatedAt: filter.updated_at
+      }));
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error("Error fetching filters by entity type:", error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error("Error fetching filters by entity type:", error.message);
+        throw error;
+      }
+    }
   },
 
   async create(filterData) {
-    await delay(400);
-    const maxId = Math.max(...savedFilters.map(f => f.Id), 0);
-    const newFilter = {
-      ...filterData,
-      Id: maxId + 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    savedFilters.push(newFilter);
-    return { ...newFilter };
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const dbData = {
+        Name: filterData.name,
+        description: filterData.description,
+        entity_type: filterData.entityType,
+        criteria: JSON.stringify(filterData.criteria || []),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      const params = {
+        records: [dbData]
+      };
+      
+      const response = await apperClient.createRecord('saved_filter', params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const successfulRecords = response.results.filter(result => result.success);
+        const failedRecords = response.results.filter(result => !result.success);
+        
+        if (failedRecords.length > 0) {
+          console.error(`Failed to create ${failedRecords.length} filters:${JSON.stringify(failedRecords)}`);
+          throw new Error('Failed to create filter');
+        }
+        
+        if (successfulRecords.length > 0) {
+          const newFilter = successfulRecords[0].data;
+          return {
+            Id: newFilter.Id,
+            name: newFilter.Name,
+            description: newFilter.description,
+            entityType: newFilter.entity_type,
+            criteria: newFilter.criteria ? JSON.parse(newFilter.criteria) : [],
+            createdAt: newFilter.created_at,
+            updatedAt: newFilter.updated_at
+          };
+        }
+      }
+      
+      throw new Error('No filter created');
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error("Error creating filter:", error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error("Error creating filter:", error.message);
+        throw error;
+      }
+    }
   },
 
   async update(id, filterData) {
-    await delay(300);
-    const index = savedFilters.findIndex(f => f.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error('Filter not found');
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const dbData = {
+        Id: parseInt(id),
+        Name: filterData.name,
+        description: filterData.description,
+        entity_type: filterData.entityType,
+        criteria: JSON.stringify(filterData.criteria || []),
+        updated_at: new Date().toISOString()
+      };
+      
+      const params = {
+        records: [dbData]
+      };
+      
+      const response = await apperClient.updateRecord('saved_filter', params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const successfulRecords = response.results.filter(result => result.success);
+        const failedRecords = response.results.filter(result => !result.success);
+        
+        if (failedRecords.length > 0) {
+          console.error(`Failed to update ${failedRecords.length} filters:${JSON.stringify(failedRecords)}`);
+          throw new Error('Failed to update filter');
+        }
+        
+        if (successfulRecords.length > 0) {
+          const updatedFilter = successfulRecords[0].data;
+          return {
+            Id: updatedFilter.Id,
+            name: updatedFilter.Name,
+            description: updatedFilter.description,
+            entityType: updatedFilter.entity_type,
+            criteria: updatedFilter.criteria ? JSON.parse(updatedFilter.criteria) : [],
+            createdAt: updatedFilter.created_at,
+            updatedAt: updatedFilter.updated_at
+          };
+        }
+      }
+      
+      throw new Error('No filter updated');
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error("Error updating filter:", error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error("Error updating filter:", error.message);
+        throw error;
+      }
     }
-    savedFilters[index] = { 
-      ...savedFilters[index], 
-      ...filterData,
-      updatedAt: new Date().toISOString()
-    };
-    return { ...savedFilters[index] };
   },
 
   async delete(id) {
-    await delay(250);
-    const index = savedFilters.findIndex(f => f.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error('Filter not found');
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const params = {
+        RecordIds: [parseInt(id)]
+      };
+      
+      const response = await apperClient.deleteRecord('saved_filter', params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return true;
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error("Error deleting filter:", error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error("Error deleting filter:", error.message);
+        throw error;
+      }
     }
-    savedFilters.splice(index, 1);
-    return true;
   },
 
-  // Apply filter criteria to data
+  // Apply filter criteria to data (maintained for client-side filtering)
   applyFilter(data, criteria, entityType) {
     if (!criteria || criteria.length === 0) return data;
 

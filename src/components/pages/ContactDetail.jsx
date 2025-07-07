@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
-import { toast } from 'react-toastify';
-import ApperIcon from '@/components/ApperIcon';
-import Loading from '@/components/ui/Loading';
-import Error from '@/components/ui/Error';
-import Empty from '@/components/ui/Empty';
-import Button from '@/components/atoms/Button';
-import Badge from '@/components/atoms/Badge';
-import { contactService } from '@/services/api/contactService';
-import { dealService } from '@/services/api/dealService';
-import { taskService } from '@/services/api/taskService';
-import { activityService } from '@/services/api/activityService';
-import EmailComposer from '@/components/organisms/EmailComposer';
+import React, { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { format } from "date-fns";
+import { toast } from "react-toastify";
+import ApperIcon from "@/components/ApperIcon";
+import EmailComposer from "@/components/organisms/EmailComposer";
+import Badge from "@/components/atoms/Badge";
+import Button from "@/components/atoms/Button";
+import Empty from "@/components/ui/Empty";
+import Error from "@/components/ui/Error";
+import Loading from "@/components/ui/Loading";
+import Deals from "@/components/pages/Deals";
+import { contactService } from "@/services/api/contactService";
+import { taskService } from "@/services/api/taskService";
+import { activityService } from "@/services/api/activityService";
+import { dealService } from "@/services/api/dealService";
 
 const ContactDetail = () => {
   const { id } = useParams();
@@ -115,9 +116,9 @@ const tabs = [
             <Button variant="ghost" size="sm" icon="ArrowLeft" />
           </Link>
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-full flex items-center justify-center">
+<div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-xl">
-                {contact.name.charAt(0).toUpperCase()}
+                {contact.name?.charAt(0).toUpperCase()}
               </span>
             </div>
             <div>
@@ -185,10 +186,10 @@ const tabs = [
             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
               <ApperIcon name="Calendar" className="w-5 h-5 text-purple-600" />
             </div>
-            <div>
+<div>
               <p className="text-sm text-slate-500">Member Since</p>
               <p className="text-sm font-medium text-slate-900">
-                {format(new Date(contact.createdAt), 'MMM dd, yyyy')}
+                {contact.createdAt ? format(new Date(contact.createdAt), 'MMM dd, yyyy') : 'N/A'}
               </p>
             </div>
           </div>
@@ -225,10 +226,10 @@ const tabs = [
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Contact Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
+<div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Tags</label>
                     <div className="flex flex-wrap gap-2">
-                      {contact.tags.map((tag, index) => (
+                      {contact.tags?.map((tag, index) => (
                         <Badge key={index} variant="default" size="sm">
                           {tag}
                         </Badge>
@@ -405,9 +406,9 @@ const tabs = [
                         </div>
                       </div>
                     </motion.div>
-                  ))}
+))}
                 </div>
-)}
+              )}
             </div>
           )}
 

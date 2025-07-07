@@ -1,18 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "@/components/organisms/Sidebar";
 import Header from "@/components/organisms/Header";
 
-function Layout({ children }) {
-  // React hooks must be called unconditionally at top level
-  const location = useLocation();
-  const navigate = useNavigate();
-
+const Layout = ({ children }) => {
+  // State for sidebar toggle
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
   // Defensive checks for router context availability
   const safeLocation = location || { pathname: '/', search: '', hash: '', state: null };
   const safeNavigate = navigate || (() => console.warn('Navigation unavailable'));
-// State for sidebar toggle
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   useEffect(() => {
     // Verify router is working properly
@@ -33,6 +29,7 @@ function Layout({ children }) {
       console.error('Search navigation error:', error);
     }
   };
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar 

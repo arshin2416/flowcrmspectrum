@@ -1,68 +1,326 @@
-import tasksData from '@/services/mockData/tasks.json';
-
-let tasks = [...tasksData];
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const taskService = {
   async getAll() {
-    await delay(300);
-    return [...tasks];
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const params = {
+        fields: [
+          { field: { Name: "Name" } },
+          { field: { Name: "title" } },
+          { field: { Name: "due_date" } },
+          { field: { Name: "priority" } },
+          { field: { Name: "status" } },
+          { field: { Name: "assignee" } },
+          { field: { Name: "contact_id" } },
+          { field: { Name: "CreatedOn" } }
+        ],
+        orderBy: [
+          { fieldName: "due_date", sorttype: "ASC" }
+        ]
+      };
+      
+      const response = await apperClient.fetchRecords('task', params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      // Map database fields to UI format
+      return (response.data || []).map(task => ({
+        Id: task.Id,
+        title: task.title,
+        dueDate: task.due_date,
+        priority: task.priority,
+        status: task.status,
+        assignee: task.assignee,
+        contactId: task.contact_id
+      }));
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error("Error fetching tasks:", error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error("Error fetching tasks:", error.message);
+        throw error;
+      }
+    }
   },
 
   async getById(id) {
-    await delay(200);
-    const task = tasks.find(t => t.Id === parseInt(id));
-    if (!task) {
-      throw new Error('Task not found');
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const params = {
+        fields: [
+          { field: { Name: "Name" } },
+          { field: { Name: "title" } },
+          { field: { Name: "due_date" } },
+          { field: { Name: "priority" } },
+          { field: { Name: "status" } },
+          { field: { Name: "assignee" } },
+          { field: { Name: "contact_id" } },
+          { field: { Name: "CreatedOn" } }
+        ]
+      };
+      
+      const response = await apperClient.getRecordById('task', parseInt(id), params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (!response.data) {
+        throw new Error('Task not found');
+      }
+      
+      const task = response.data;
+      return {
+        Id: task.Id,
+        title: task.title,
+        dueDate: task.due_date,
+        priority: task.priority,
+        status: task.status,
+        assignee: task.assignee,
+        contactId: task.contact_id
+      };
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error(`Error fetching task with ID ${id}:`, error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error(`Error fetching task with ID ${id}:`, error.message);
+        throw error;
+      }
     }
-    return { ...task };
   },
 
   async getByContactId(contactId) {
-    await delay(200);
-    return tasks.filter(t => t.contactId === parseInt(contactId));
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const params = {
+        fields: [
+          { field: { Name: "Name" } },
+          { field: { Name: "title" } },
+          { field: { Name: "due_date" } },
+          { field: { Name: "priority" } },
+          { field: { Name: "status" } },
+          { field: { Name: "assignee" } },
+          { field: { Name: "contact_id" } }
+        ],
+        where: [
+          {
+            FieldName: "contact_id",
+            Operator: "EqualTo",
+            Values: [parseInt(contactId)]
+          }
+        ],
+        orderBy: [
+          { fieldName: "due_date", sorttype: "ASC" }
+        ]
+      };
+      
+      const response = await apperClient.fetchRecords('task', params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return (response.data || []).map(task => ({
+        Id: task.Id,
+        title: task.title,
+        dueDate: task.due_date,
+        priority: task.priority,
+        status: task.status,
+        assignee: task.assignee,
+        contactId: task.contact_id
+      }));
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error("Error fetching tasks by contact:", error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error("Error fetching tasks by contact:", error.message);
+        throw error;
+      }
+    }
   },
 
   async create(taskData) {
-    await delay(400);
-    const maxId = Math.max(...tasks.map(t => t.Id), 0);
-    const newTask = {
-      ...taskData,
-      Id: maxId + 1,
-      createdAt: new Date().toISOString()
-    };
-    tasks.push(newTask);
-    return { ...newTask };
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const dbData = {
+        Name: taskData.title,
+        title: taskData.title,
+        due_date: taskData.dueDate,
+        priority: taskData.priority,
+        status: taskData.status,
+        assignee: taskData.assignee,
+        contact_id: parseInt(taskData.contactId)
+      };
+      
+      const params = {
+        records: [dbData]
+      };
+      
+      const response = await apperClient.createRecord('task', params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const successfulRecords = response.results.filter(result => result.success);
+        const failedRecords = response.results.filter(result => !result.success);
+        
+        if (failedRecords.length > 0) {
+          console.error(`Failed to create ${failedRecords.length} tasks:${JSON.stringify(failedRecords)}`);
+          throw new Error('Failed to create task');
+        }
+        
+        if (successfulRecords.length > 0) {
+          const newTask = successfulRecords[0].data;
+          return {
+            Id: newTask.Id,
+            title: newTask.title,
+            dueDate: newTask.due_date,
+            priority: newTask.priority,
+            status: newTask.status,
+            assignee: newTask.assignee,
+            contactId: newTask.contact_id
+          };
+        }
+      }
+      
+      throw new Error('No task created');
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error("Error creating task:", error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error("Error creating task:", error.message);
+        throw error;
+      }
+    }
   },
 
   async update(id, taskData) {
-    await delay(300);
-    const index = tasks.findIndex(t => t.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error('Task not found');
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const dbData = {
+        Id: parseInt(id),
+        title: taskData.title,
+        due_date: taskData.dueDate,
+        priority: taskData.priority,
+        status: taskData.status,
+        assignee: taskData.assignee,
+        contact_id: parseInt(taskData.contactId)
+      };
+      
+      const params = {
+        records: [dbData]
+      };
+      
+      const response = await apperClient.updateRecord('task', params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      if (response.results) {
+        const successfulRecords = response.results.filter(result => result.success);
+        const failedRecords = response.results.filter(result => !result.success);
+        
+        if (failedRecords.length > 0) {
+          console.error(`Failed to update ${failedRecords.length} tasks:${JSON.stringify(failedRecords)}`);
+          throw new Error('Failed to update task');
+        }
+        
+        if (successfulRecords.length > 0) {
+          const updatedTask = successfulRecords[0].data;
+          return {
+            Id: updatedTask.Id,
+            title: updatedTask.title,
+            dueDate: updatedTask.due_date,
+            priority: updatedTask.priority,
+            status: updatedTask.status,
+            assignee: updatedTask.assignee,
+            contactId: updatedTask.contact_id
+          };
+        }
+      }
+      
+      throw new Error('No task updated');
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error("Error updating task:", error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error("Error updating task:", error.message);
+        throw error;
+      }
     }
-    tasks[index] = { ...tasks[index], ...taskData };
-    return { ...tasks[index] };
   },
 
   async delete(id) {
-    await delay(250);
-    const index = tasks.findIndex(t => t.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error('Task not found');
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      const params = {
+        RecordIds: [parseInt(id)]
+      };
+      
+      const response = await apperClient.deleteRecord('task', params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return true;
+    } catch (error) {
+      if (error?.response?.data?.message) {
+        console.error("Error deleting task:", error?.response?.data?.message);
+        throw new Error(error.response.data.message);
+      } else {
+        console.error("Error deleting task:", error.message);
+        throw error;
+      }
     }
-    tasks.splice(index, 1);
-    return true;
   },
 
   async markComplete(id) {
-    await delay(200);
-    const index = tasks.findIndex(t => t.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error('Task not found');
-    }
-    tasks[index] = { ...tasks[index], status: 'completed' };
-    return { ...tasks[index] };
+    return this.update(id, { status: 'completed' });
   }
 };
