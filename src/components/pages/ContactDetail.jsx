@@ -483,9 +483,9 @@ const tabs = [
                             </div>
                           )}
                         </div>
-                      </div>
+</div>
                     </motion.div>
-))}
+                  ))}
                 </div>
               )}
             </div>
@@ -530,7 +530,6 @@ const tabs = [
           onClose={() => setIsEmailModalOpen(false)}
           contact={contact}
         />
-/>
       )}
 
       {/* Edit Contact Modal */}
@@ -607,6 +606,7 @@ const tabs = [
         </form>
       </Modal>
     </div>
+  );
 };
 
 export default ContactDetail;
