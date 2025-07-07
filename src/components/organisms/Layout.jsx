@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "@/components/organisms/Sidebar";
 import Header from "@/components/organisms/Header";
 
 const Layout = ({ children }) => {
   // State for sidebar toggle
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+// Initialize React Router hooks
+  const navigate = useNavigate();
+  const location = useLocation();
   
   // Defensive checks for router context availability
   const safeLocation = location || { pathname: '/', search: '', hash: '', state: null };
