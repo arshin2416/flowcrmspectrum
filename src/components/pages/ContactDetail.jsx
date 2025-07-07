@@ -6,11 +6,21 @@ import { toast } from "react-toastify";
 import ApperIcon from "@/components/ApperIcon";
 import EmailComposer from "@/components/organisms/EmailComposer";
 import Badge from "@/components/atoms/Badge";
+import Select from "@/components/atoms/Select";
 import Button from "@/components/atoms/Button";
+import Input from "@/components/atoms/Input";
 import Empty from "@/components/ui/Empty";
 import Error from "@/components/ui/Error";
 import Loading from "@/components/ui/Loading";
 import Deals from "@/components/pages/Deals";
+import Modal from "@/components/molecules/Modal";
+import tasksData from "@/services/mockData/tasks.json";
+import savedFiltersData from "@/services/mockData/savedFilters.json";
+import dealsData from "@/services/mockData/deals.json";
+import leadsData from "@/services/mockData/leads.json";
+import contactsData from "@/services/mockData/contacts.json";
+import activitiesData from "@/services/mockData/activities.json";
+import emailsData from "@/services/mockData/emails.json";
 import { contactService } from "@/services/api/contactService";
 import { taskService } from "@/services/api/taskService";
 import { activityService } from "@/services/api/activityService";
@@ -23,9 +33,20 @@ const ContactDetail = () => {
   const [tasks, setTasks] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    status: 'prospect',
+    tags: []
+  });
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadContactData = async () => {
     try {
@@ -64,6 +85,60 @@ const ContactDetail = () => {
       toast.success('Task completed');
     } catch (err) {
       toast.error('Failed to complete task');
+    }
+};
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name.trim()) errors.name = 'Name is required';
+    if (!formData.email.trim()) errors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = 'Email is invalid';
+    if (!formData.phone.trim()) errors.phone = 'Phone is required';
+    if (!formData.company.trim()) errors.company = 'Company is required';
+    return errors;
+  };
+
+  const handleEdit = () => {
+    // Pre-populate form with current contact data
+    setFormData({
+      name: contact.name || '',
+      email: contact.email || '',
+      phone: contact.phone || '',
+      company: contact.company || '',
+      status: contact.status || 'prospect',
+      tags: contact.tags || []
+    });
+    setFormErrors({});
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    const errors = validateForm();
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) return;
+
+    try {
+      setIsSubmitting(true);
+      const updatedContact = await contactService.update(contact.Id, formData);
+      
+      // Update local contact state
+      setContact(updatedContact);
+      setIsEditModalOpen(false);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        company: '',
+        status: 'prospect',
+        tags: []
+      });
+      toast.success('Contact updated successfully');
+    } catch (err) {
+      toast.error('Failed to update contact');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -131,7 +206,11 @@ const tabs = [
           <Badge variant={statusColors[contact.status]} className="capitalize">
             {contact.status}
           </Badge>
-          <Button variant="primary" icon="Edit">
+<Button 
+            variant="primary" 
+            icon="Edit"
+            onClick={handleEdit}
+          >
             Edit Contact
           </Button>
         </div>
@@ -451,9 +530,83 @@ const tabs = [
           onClose={() => setIsEmailModalOpen(false)}
           contact={contact}
         />
+/>
       )}
+
+      {/* Edit Contact Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Contact"
+        size="md"
+      >
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Full Name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              error={formErrors.name}
+              required
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              error={formErrors.email}
+              required
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Phone"
+              value={formData.phone}
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              error={formErrors.phone}
+              required
+            />
+            <Input
+              label="Company"
+              value={formData.company}
+              onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+              error={formErrors.company}
+              required
+            />
+          </div>
+
+          <Select
+            label="Status"
+            value={formData.status}
+            onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+            options={[
+              { value: 'prospect', label: 'Prospect' },
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' }
+            ]}
+          />
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsEditModalOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmitting}
+            >
+              Update Contact
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
-  );
 };
 
 export default ContactDetail;
