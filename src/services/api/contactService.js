@@ -168,7 +168,7 @@ if (!response.success) {
         apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
       });
       
-      // Map UI format to database fields and include only Updateable fields
+// Map UI format to database fields and include only Updateable fields
       const dbData = {
         Id: parseInt(id),
         Name: contactData.name,
@@ -176,7 +176,9 @@ if (!response.success) {
         phone: contactData.phone,
         company: contactData.company,
         status: contactData.status,
-        Tags: contactData.tags ? contactData.tags.join(',') : ''
+        Tags: contactData.tags ? contactData.tags.join(',') : '',
+        Owner: contactData.owner ? parseInt(contactData.owner) : null,
+        people_3: contactData.people_3 ? parseInt(contactData.people_3) : null
       };
       
       const params = {
