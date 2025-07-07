@@ -24,20 +24,19 @@ export const contactService = {
       
       const response = await apperClient.fetchRecords('contact', params);
       
-      if (!response.success) {
+if (!response.success) {
         console.error(response.message);
-        throw new Error(response.message);
+        return [];
       }
       
       return response.data || [];
     } catch (error) {
       if (error?.response?.data?.message) {
         console.error("Error fetching contacts:", error?.response?.data?.message);
-        throw new Error(error.response.data.message);
       } else {
         console.error("Error fetching contacts:", error.message);
-        throw error;
       }
+      return [];
     }
   },
 

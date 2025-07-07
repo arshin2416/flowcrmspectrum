@@ -328,8 +328,8 @@ activeTab={statusFilter}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex space-x-1">
-                        {contact.tags.map((tag, tagIndex) => (
+<div className="flex space-x-1">
+                        {(contact.tags || []).map((tag, tagIndex) => (
                           <Badge key={tagIndex} variant="default" size="sm">
                             {tag}
                           </Badge>
