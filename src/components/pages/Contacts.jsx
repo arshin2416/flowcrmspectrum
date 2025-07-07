@@ -75,11 +75,11 @@ useEffect(() => {
     }
 
     // Filter by search term
-    if (searchTerm) {
+if (searchTerm) {
       filtered = filtered.filter(contact =>
-        contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.company.toLowerCase().includes(searchTerm.toLowerCase())
+        (contact.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (contact.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (contact.company || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -90,11 +90,11 @@ useEffect(() => {
 
     // Sort contacts
     filtered.sort((a, b) => {
-      switch (sortBy) {
+switch (sortBy) {
         case 'name':
-          return a.name.localeCompare(b.name);
+          return (a.name || '').localeCompare(b.name || '');
         case 'company':
-          return a.company.localeCompare(b.company);
+          return (a.company || '').localeCompare(b.company || '');
         case 'created':
           return new Date(b.createdAt) - new Date(a.createdAt);
         default:
@@ -303,8 +303,8 @@ activeTab={statusFilter}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-full flex items-center justify-center">
-                          <span className="text-white font-medium text-sm">
-                            {contact.name.charAt(0).toUpperCase()}
+<span className="text-white font-medium text-sm">
+                            {(contact.name || 'U').charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div className="ml-4">
