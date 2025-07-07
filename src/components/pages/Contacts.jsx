@@ -95,8 +95,8 @@ switch (sortBy) {
           return (a.name || '').localeCompare(b.name || '');
         case 'company':
           return (a.company || '').localeCompare(b.company || '');
-        case 'created':
-          return new Date(b.createdAt) - new Date(a.createdAt);
+case 'created':
+          return new Date(b.created_at || new Date()) - new Date(a.created_at || new Date());
         default:
           return 0;
       }
@@ -336,8 +336,8 @@ activeTab={statusFilter}
                         ))}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {format(new Date(contact.createdAt), 'MMM dd, yyyy')}
+<td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      {format(new Date(contact.created_at || new Date()), 'MMM dd, yyyy')}
                     </td>
 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
