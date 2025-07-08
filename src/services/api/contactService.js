@@ -181,12 +181,6 @@ if (!response.success) {
         people_3: contactData.people_3 ? parseInt(contactData.people_3) : null
       };
 
-      // Initialize ApperClient with environment variables
-      const { ApperClient } = window.ApperSDK;
-      const apperClient = new ApperClient({
-        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
-        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
-      });
 
       // Validate environment variables
       if (!import.meta.env.VITE_APPER_PROJECT_ID || !import.meta.env.VITE_APPER_PUBLIC_KEY) {
@@ -244,45 +238,7 @@ if (!response.success) {
           return successfulUpdates[0].data;
         }
       }
-
-      throw new Error('No response data received from update operation');
-      
-      const params = {
-        records: [dbData]
-      };
-      
-      const response = await apperClient.updateRecord('contact', params);
-      
-      if (!response.success) {
-        console.error(response.message);
-        throw new Error(response.message);
-      }
-      
-      if (response.results) {
-        const successfulRecords = response.results.filter(result => result.success);
-        const failedRecords = response.results.filter(result => !result.success);
-        
-        if (failedRecords.length > 0) {
-          console.error(`Failed to update ${failedRecords.length} contacts:${JSON.stringify(failedRecords)}`);
-          throw new Error('Failed to update contact');
-        }
-        
-        if (successfulRecords.length > 0) {
-          const updatedContact = successfulRecords[0].data;
-          return {
-            Id: updatedContact.Id,
-            name: updatedContact.Name,
-            email: updatedContact.email,
-            phone: updatedContact.phone,
-            company: updatedContact.company,
-            status: updatedContact.status,
-            tags: updatedContact.Tags ? updatedContact.Tags.split(',') : [],
-            createdAt: updatedContact.CreatedOn
-          };
-        }
-      }
-      
-      throw new Error('No contact updated');
+throw new Error('No response data received from update operation');
     } catch (error) {
       if (error?.response?.data?.message) {
         console.error("Error updating contact:", error?.response?.data?.message);
