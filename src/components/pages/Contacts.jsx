@@ -91,12 +91,12 @@ if (searchTerm) {
     // Sort contacts
     filtered.sort((a, b) => {
 switch (sortBy) {
-        case 'name':
+case 'name':
           return (a.name || '').localeCompare(b.name || '');
         case 'company':
           return (a.company || '').localeCompare(b.company || '');
-case 'created':
-          return new Date(b.created_at || new Date()) - new Date(a.created_at || new Date());
+        case 'created':
+          return new Date(b.createdAt || new Date()) - new Date(a.createdAt || new Date());
         default:
           return 0;
       }
@@ -309,17 +309,17 @@ activeTab={statusFilter}
                         </div>
                         <div className="ml-4">
                           <Link
-                            to={`/contacts/${contact.Id}`}
+to={`/contacts/${contact.Id}`}
                             className="text-sm font-medium text-slate-900 hover:text-primary transition-colors"
                           >
                             {contact.name}
                           </Link>
-                          <div className="text-sm text-slate-500">{contact.email}</div>
+<div className="text-sm text-slate-500">{contact.email}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-900">{contact.company}</div>
+<div className="text-sm text-slate-900">{contact.company}</div>
                       <div className="text-sm text-slate-500">{contact.phone}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -337,7 +337,7 @@ activeTab={statusFilter}
                       </div>
                     </td>
 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {format(new Date(contact.created_at || new Date()), 'MMM dd, yyyy')}
+                      {format(new Date(contact.createdAt || new Date()), 'MMM dd, yyyy')}
                     </td>
 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
