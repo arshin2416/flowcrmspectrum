@@ -119,6 +119,12 @@ const handleEditSubmit = async (e) => {
 
     if (Object.keys(errors).length > 0) return;
 
+    // Validate contact exists and has valid ID before attempting update
+    if (!contact || !contact.Id) {
+      toast.error('Invalid contact data. Please refresh the page and try again.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const updatedContact = await contactService.update(contact.Id, formData);
@@ -139,7 +145,15 @@ const handleEditSubmit = async (e) => {
       console.error('Error updating contact:', err.message);
       
       // Provide specific error messages based on error type
-      if (err.message.includes('connect to the server')) {
+      if (err.message.includes('not found')) {
+        toast.error('Contact not found. The contact may have been deleted or moved. Please refresh the page.');
+        // Optionally reload the contact data or redirect to contacts list
+        setTimeout(() => {
+          window.location.href = '/contacts';
+        }, 2000);
+      } else if (err.message.includes('Invalid contact ID')) {
+        toast.error('Invalid contact data. Please refresh the page and try again.');
+      } else if (err.message.includes('connect to the server')) {
         toast.error('Network Error: Unable to connect to the server. Please check your internet connection.');
       } else if (err.message.includes('Authentication failed')) {
         toast.error('Authentication Error: Please refresh the page and try again.');

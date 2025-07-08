@@ -160,17 +160,28 @@ if (!response.success) {
     }
   },
 
-  async update(id, contactData) {
+async update(id, contactData) {
     try {
+      // Validate ID parameter
+      const contactId = parseInt(id);
+      if (!contactId || isNaN(contactId) || contactId <= 0) {
+        throw new Error('Invalid contact ID provided for update operation');
+      }
+
+      // Validate contact data exists
+      if (!contactData || typeof contactData !== 'object') {
+        throw new Error('Invalid contact data provided for update operation');
+      }
+
       const { ApperClient } = window.ApperSDK;
       const apperClient = new ApperClient({
         apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
         apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
       });
       
-// Map UI format to database fields and include only Updateable fields
+      // Map UI format to database fields and include only Updateable fields
       const dbData = {
-        Id: parseInt(id),
+        Id: contactId,
         Name: contactData.name,
         email: contactData.email,
         phone: contactData.phone,
