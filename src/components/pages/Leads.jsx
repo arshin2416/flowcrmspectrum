@@ -131,14 +131,17 @@ useEffect(() => {
 
     if (Object.keys(errors).length > 0) return;
 
-    try {
+try {
       setIsSubmitting(true);
-      const newLead = await leadService.create({
+      await leadService.create({
         ...formData,
         contactId: parseInt(formData.contactId),
         score: parseInt(formData.score)
       });
-      setLeads(prev => [newLead, ...prev]);
+      
+      // Reload all data to ensure proper display of newly created lead
+      await loadData();
+      
       setIsModalOpen(false);
       setFormData({
         contactId: '',
