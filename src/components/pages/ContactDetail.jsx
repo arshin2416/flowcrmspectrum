@@ -112,7 +112,7 @@ const [error, setError] = useState(null);
     setIsEditModalOpen(true);
   };
 
-  const handleEditSubmit = async (e) => {
+const handleEditSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm();
     setFormErrors(errors);
@@ -136,7 +136,18 @@ const [error, setError] = useState(null);
       });
       toast.success('Contact updated successfully');
     } catch (err) {
-      toast.error('Failed to update contact');
+      console.error('Error updating contact:', err.message);
+      
+      // Provide specific error messages based on error type
+      if (err.message.includes('connect to the server')) {
+        toast.error('Network Error: Unable to connect to the server. Please check your internet connection.');
+      } else if (err.message.includes('Authentication failed')) {
+        toast.error('Authentication Error: Please refresh the page and try again.');
+      } else if (err.message.includes('configuration error')) {
+        toast.error('Configuration Error: Please contact support.');
+      } else {
+        toast.error(`Error updating contact: ${err.message}`);
+      }
     } finally {
       setIsSubmitting(false);
     }

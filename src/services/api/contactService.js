@@ -180,6 +180,72 @@ if (!response.success) {
         Owner: contactData.owner ? parseInt(contactData.owner) : null,
         people_3: contactData.people_3 ? parseInt(contactData.people_3) : null
       };
+
+      // Initialize ApperClient with environment variables
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+
+      // Validate environment variables
+      if (!import.meta.env.VITE_APPER_PROJECT_ID || !import.meta.env.VITE_APPER_PUBLIC_KEY) {
+        console.error('Missing Apper environment variables:', {
+          projectId: !!import.meta.env.VITE_APPER_PROJECT_ID,
+          publicKey: !!import.meta.env.VITE_APPER_PUBLIC_KEY
+        });
+        throw new Error('API configuration error. Please check environment variables.');
+      }
+
+      const params = {
+        records: [dbData]
+      };
+
+      let response;
+      try {
+        response = await apperClient.updateRecord('contact', params);
+      } catch (networkError) {
+        console.error('Network error updating contact:', {
+          error: networkError.message,
+          stack: networkError.stack,
+          contactId: id,
+          projectId: import.meta.env.VITE_APPER_PROJECT_ID ? 'Set' : 'Missing',
+          publicKey: import.meta.env.VITE_APPER_PUBLIC_KEY ? 'Set' : 'Missing'
+        });
+        
+        if (networkError.message.includes('Network Error') || networkError.message.includes('fetch')) {
+          throw new Error('Unable to connect to the server. Please check your internet connection and try again.');
+        } else if (networkError.message.includes('Unauthorized') || networkError.message.includes('401')) {
+          throw new Error('Authentication failed. Please check your API credentials.');
+        } else if (networkError.message.includes('404') || networkError.message.includes('Not Found')) {
+          throw new Error('Contact not found or API endpoint unavailable.');
+        } else {
+          throw new Error(`Update failed: ${networkError.message}`);
+        }
+      }
+
+      // Handle API response errors
+      if (!response.success) {
+        console.error('API error updating contact:', response.message);
+        throw new Error(response.message || 'Failed to update contact');
+      }
+
+      if (response.results) {
+        const successfulUpdates = response.results.filter(result => result.success);
+        const failedUpdates = response.results.filter(result => !result.success);
+        
+        if (failedUpdates.length > 0) {
+          console.error(`Failed to update contact:${JSON.stringify(failedUpdates)}`);
+          const errorMessage = failedUpdates[0].message || 'Update operation failed';
+          throw new Error(errorMessage);
+        }
+        
+        if (successfulUpdates.length > 0) {
+          return successfulUpdates[0].data;
+        }
+      }
+
+      throw new Error('No response data received from update operation');
       
       const params = {
         records: [dbData]
