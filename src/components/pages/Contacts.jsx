@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import FilterBuilder from "@/components/molecules/FilterBuilder";
+import PeopleField from "@/components/molecules/PeopleField";
 import { filterService } from "@/services/api/filterService";
 import ApperIcon from "@/components/ApperIcon";
 import EmailComposer from "@/components/organisms/EmailComposer";
@@ -17,8 +18,11 @@ import Error from "@/components/ui/Error";
 import Empty from "@/components/ui/Empty";
 import Loading from "@/components/ui/Loading";
 import { contactService } from "@/services/api/contactService";
+import { useTable } from '@/components/hooks/useTable';
+
 
 const Contacts = () => {
+  const { getWhereGroups } = useTable();
   const [contacts, setContacts] = useState([]);
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,8 +46,11 @@ const Contacts = () => {
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPeople, setSelectedPeople] = useState([]);
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [peopleLoading, setPeopleLoading] = useState(false);
 
-const loadContacts = async () => {
+  const loadContacts = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -60,6 +67,47 @@ const loadContacts = async () => {
     } finally {
       setLoading(false);
     }
+  };
+
+
+
+  // Load people for selection (used in create contact modal)
+  const loadPeopleForSelection = async (searchTerm = '') => {
+    try {
+      setPeopleLoading(true);
+      const params = {
+        "where": [],
+        "aggregators": [],
+        "orderBy": [{ "fieldName": "FirstName", "sorttype": "ASC" }],
+        "pagingInfo": {
+          "offset": 0,
+          "limit": 50
+        },
+        whereGroups: getWhereGroups(searchTerm)
+      };
+      
+      const response = await contactService.getPeople(params);
+      
+      // Ensure response is an array and has proper structure
+      if (Array.isArray(response)) {
+        setAvailableUsers(response);
+      } else {
+        console.warn('Expected array response from getPeople, got:', response);
+        setAvailableUsers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching people for selection:", error.message);
+      setAvailableUsers([]);
+      toast.error('Failed to load people for selection');
+    } finally {
+      setPeopleLoading(false);
+    }
+  };
+
+  const handleAddContact = async () => {
+    // Load people for selection when modal opens
+    await loadPeopleForSelection();
+    setIsModalOpen(true);
   };
 
   useEffect(() => {
@@ -124,7 +172,10 @@ case 'created':
 
     try {
       setIsSubmitting(true);
-      const newContact = await contactService.create(formData);
+      const newContact = await contactService.create({
+        ...formData,
+        people_3: selectedPeople
+      });
       setContacts(prev => [newContact, ...prev]);
       setIsModalOpen(false);
       setFormData({
@@ -135,6 +186,7 @@ case 'created':
         status: 'prospect',
         tags: []
       });
+      setSelectedPeople([]);
       toast.success('Contact created successfully');
     } catch (err) {
       toast.error('Failed to create contact');
@@ -143,7 +195,7 @@ case 'created':
     }
   };
 
-const handleDelete = async (contactId) => {
+  const handleDelete = async (contactId) => {
     if (!window.confirm('Are you sure you want to delete this contact?')) return;
 
     try {
@@ -204,7 +256,7 @@ const handleDelete = async (contactId) => {
         <Button 
           variant="primary" 
           icon="Plus"
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleAddContact}
         >
 Add Contact
         </Button>
@@ -262,7 +314,7 @@ activeTab={statusFilter}
           title="No contacts found"
           message="Start building your customer relationships by adding your first contact."
           actionLabel="Add Contact"
-          onAction={() => setIsModalOpen(true)}
+          onAction={handleAddContact}
           icon="Users"
         />
       ) : (
@@ -421,6 +473,19 @@ activeTab={statusFilter}
               { value: 'active', label: 'Active' },
               { value: 'inactive', label: 'Inactive' }
             ]}
+          />
+
+          {/* People Field */}
+          <PeopleField
+            label="People 3"
+            selectedPeople={selectedPeople}
+            onSelectionChange={setSelectedPeople}
+            isMultiple={true}
+            placeholder="Add People..."
+            showCheckbox={true}
+            availableUsers={availableUsers}
+            onSearchPeople={loadPeopleForSelection}
+            isLoading={peopleLoading}
           />
 
           <div className="flex justify-end space-x-3 pt-4">

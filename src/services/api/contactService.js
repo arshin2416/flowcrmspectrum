@@ -1,3 +1,80 @@
+// Utility functions for people field handling
+const PeopleFieldUtils = {
+  /**
+   * Transform people data from API format to UI format
+   * @param {Array} apiPeople - People data from API
+   * @returns {Array} - UI formatted people data
+   */
+  toUIFormat: (apiPeople) => {
+    if (!apiPeople || !Array.isArray(apiPeople)) return [];
+    
+    return apiPeople.map(person => ({
+      Id: person.User.Id,
+      FirstName: person.User.FirstName || person.User.Name || '',
+      LastName: person.User.LastName || '',
+      Email: person.User.Email || '',
+      // Keep reference to original data for updates
+      _originalData: person
+    }));
+  },
+
+  /**
+   * Transform people data from UI format to API format for creating records
+   * @param {Array} uiPeople - People data from UI
+   * @returns {Array} - API formatted people data for create
+   */
+  toCreateFormat: (uiPeople) => {
+    if (!uiPeople || !Array.isArray(uiPeople)) return null;
+    if (uiPeople.length === 0) return null;
+    
+    return uiPeople.map(person => ({
+      User: person.Id
+    }));
+  },
+
+  /**
+   * Transform people data from UI format to API format for updating records
+   * @param {Array} uiPeople - People data from UI
+   * @param {Array} originalPeople - Original people data for fallback
+   * @returns {Array} - API formatted people data for update
+   */
+  toUpdateFormat: (uiPeople, originalPeople = []) => {
+    if (!uiPeople || !Array.isArray(uiPeople)) return null;
+    if (uiPeople.length === 0) return null;
+    
+    return uiPeople.map(person => {
+      // Check if this person has original data (was previously selected)
+      if (person._originalData) {
+        // User was already selected, include Id and ParentRecordId
+        return {
+          Id: person._originalData.Id,
+          User: person._originalData.User.Id,
+          ParentRecordId: person._originalData.ParentRecordId
+        };
+      } else {
+        // Check if this person was already selected (exists in original data)
+        const existingPerson = originalPeople.find(orig => 
+          orig.User && orig.User.Id === person.Id
+        );
+        
+        if (existingPerson) {
+          // User was already selected, include Id and ParentRecordId
+          return {
+            Id: existingPerson.Id,
+            User: existingPerson.User.Id,
+            ParentRecordId: existingPerson.ParentRecordId
+          };
+        } else {
+          // New user selection, only include User field
+          return {
+            User: person.Id
+          };
+        }
+      }
+    });
+  }
+};
+
 export const contactService = {
   async getAll() {
     try {
@@ -15,7 +92,12 @@ export const contactService = {
           { field: { Name: "company" } },
           { field: { Name: "status" } },
           { field: { Name: "Tags" } },
-          { field: { Name: "CreatedOn" } }
+          { field: { Name: "CreatedOn" } },
+          { field: { Name: "people_3" }, },
+          { field: { Name: "Formula1" } },
+          { field: { Name: "score_rollup" } },
+          { field: { Name: "invoicenumber" } },
+       
         ],
         orderBy: [
           { fieldName: "CreatedOn", sorttype: "DESC" }
@@ -56,7 +138,11 @@ if (!response.success) {
           { field: { Name: "company" } },
           { field: { Name: "status" } },
           { field: { Name: "Tags" } },
-          { field: { Name: "CreatedOn" } }
+          { field: { Name: "CreatedOn" } },
+          { field: { Name: "people_3" } },
+          { field: { Name: "Formula1" } },
+          { field: { Name: "score_rollup" } },
+          { field: { Name: "invoicenumber" } },
         ]
       };
       
@@ -81,7 +167,11 @@ if (!response.success) {
         company: contact.company,
         status: contact.status,
         tags: contact.Tags ? contact.Tags.split(',') : [],
-        createdAt: contact.CreatedOn
+        createdAt: contact.CreatedOn,
+        people_3: contact.people_3 || [],
+        Formula1: contact.Formula1 || '',
+        score_rollup: contact.score_rollup || '',
+        invoicenumber: contact.invoicenumber || ''
       };
     } catch (error) {
       if (error?.response?.data?.message) {
@@ -110,7 +200,8 @@ if (!response.success) {
         company: contactData.company,
         status: contactData.status,
         Tags: contactData.tags ? contactData.tags.join(',') : '',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        people_3: PeopleFieldUtils.toCreateFormat(contactData.people_3),
       };
       
       const params = {
@@ -143,7 +234,11 @@ if (!response.success) {
             company: newContact.company,
             status: newContact.status,
             tags: newContact.Tags ? newContact.Tags.split(',') : [],
-            createdAt: newContact.CreatedOn
+            createdAt: newContact.CreatedOn,
+            people_3: newContact.people_3 || [],
+            Formula1: newContact.Formula1 || '',
+            score_rollup: newContact.score_rollup || '',
+            invoicenumber: newContact.invoicenumber || ''
           };
         }
       }
@@ -168,7 +263,9 @@ if (!response.success) {
         apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
       });
       
-// Map UI format to database fields and include only Updateable fields
+
+
+      // Map UI format to database fields and include only Updateable fields
       const dbData = {
         Id: parseInt(id),
         Name: contactData.name,
@@ -177,8 +274,7 @@ if (!response.success) {
         company: contactData.company,
         status: contactData.status,
         Tags: contactData.tags ? contactData.tags.join(',') : '',
-        Owner: contactData.owner ? parseInt(contactData.owner) : null,
-        people_3: contactData.people_3 ? parseInt(contactData.people_3) : null
+        people_3: PeopleFieldUtils.toUpdateFormat(contactData.people_3, contactData.originalPeople3),
       };
       
       const params = {
@@ -211,7 +307,11 @@ if (!response.success) {
             company: updatedContact.company,
             status: updatedContact.status,
             tags: updatedContact.Tags ? updatedContact.Tags.split(',') : [],
-            createdAt: updatedContact.CreatedOn
+            createdAt: updatedContact.CreatedOn,
+            people_3: updatedContact.people_3 || [],
+            Formula1: updatedContact.Formula1 || '',
+            score_rollup: updatedContact.score_rollup || '',
+            invoicenumber: updatedContact.invoicenumber || ''
           };
         }
       }
@@ -268,5 +368,29 @@ if (!response.success) {
         throw error;
       }
     }
-  }
+  },
+  async getPeople(params) {
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+
+      const response = await apperClient.getPeople(params);
+
+      if(response.success){
+        return response.data;
+      }
+      else{
+        throw new Error(response.message);
+      }
+    }
+    catch(error){
+      console.error("Error fetching people:", error.message);
+      throw error;
+    } 
+    
+  },
+  
 };

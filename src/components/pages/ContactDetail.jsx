@@ -14,6 +14,7 @@ import Error from "@/components/ui/Error";
 import Loading from "@/components/ui/Loading";
 import Deals from "@/components/pages/Deals";
 import Modal from "@/components/molecules/Modal";
+import PeopleField from "@/components/molecules/PeopleField";
 import tasksData from "@/services/mockData/tasks.json";
 import savedFiltersData from "@/services/mockData/savedFilters.json";
 import dealsData from "@/services/mockData/deals.json";
@@ -25,15 +26,17 @@ import { contactService } from "@/services/api/contactService";
 import { taskService } from "@/services/api/taskService";
 import { activityService } from "@/services/api/activityService";
 import { dealService } from "@/services/api/dealService";
+import {  useTable } from "@/components/hooks/useTable";
 
 const ContactDetail = () => {
   const { id } = useParams();
+  const { getAvatar, getDisplayName, getWhereGroups } = useTable();
   const [contact, setContact] = useState(null);
   const [deals, setDeals] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-const [error, setError] = useState(null);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -47,9 +50,14 @@ const [error, setError] = useState(null);
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPeople, setSelectedPeople] = useState([]);
+  const [originalPeople3, setOriginalPeople3] = useState([]);
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [peopleLoading, setPeopleLoading] = useState(false);
 
   const loadContactData = async () => {
     try {
+   
       setLoading(true);
       setError(null);
       
@@ -64,6 +72,24 @@ const [error, setError] = useState(null);
       setDeals(dealsData);
       setTasks(tasksData);
       setActivities(activitiesData);
+      
+      // Store original people_3 data and convert to UI format
+      if (contactData.people_3 && Array.isArray(contactData.people_3)) {
+        setOriginalPeople3(contactData.people_3);
+        
+        // Convert API format to UI format for the PeopleField component
+        const convertedPeople = contactData.people_3.map(person => ({
+          Id: person.User.Id,
+          FirstName: person.User.FirstName || person.User.Name || '',
+          LastName: person.User.LastName || '',
+          Email: person.User.Email || '',
+          // Keep reference to original data for updates
+          _originalData: person
+        }));
+        
+        setSelectedPeople(convertedPeople);
+      }
+      
     } catch (err) {
       setError(err.message);
       toast.error('Failed to load contact details');
@@ -72,8 +98,93 @@ const [error, setError] = useState(null);
     }
   };
 
+
+
+  // Load people for selection (used in modals)
+  const loadPeopleForSelection = async (searchTerm = '') => {
+    try {
+      setPeopleLoading(true);
+      const params = {
+        "where": [],
+        "aggregators": [],
+        "orderBy": [{ "fieldName": "FirstName", "sorttype": "ASC" }],
+        "pagingInfo": {
+          "offset": 0,
+          "limit": 50
+        },
+        whereGroups: getWhereGroups(searchTerm)
+      };
+      
+      const response = await contactService.getPeople(params);
+      
+      // Ensure response is an array and has proper structure
+      if (Array.isArray(response)) {
+        setAvailableUsers(response);
+      } else {
+        console.warn('Expected array response from getPeople, got:', response);
+        setAvailableUsers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching people for selection:", error.message);
+      setAvailableUsers([]);
+      toast.error('Failed to load people for selection');
+    } finally {
+      setPeopleLoading(false);
+    }
+  };
+  const transformPeopleData = (people) => {
+    const convertedPeople = people.map(person => ({
+      Id: person.User.Id,
+      FirstName: person.User.FirstName || person.User.Name || '',
+      LastName: person.User.LastName || '',
+      Email: person.User.Email || '',
+      // Keep reference to original data for updates
+      _originalData: person
+    }));
+    setSelectedPeople(convertedPeople);
+  };
+  
+  const loadRecordById = async (id) => {
+    try {
+      const contactData = await contactService.getById(id);
+
+      setContact(contactData);
+     
+        
+      // Store original people_3 data and convert to UI format
+      if (contactData.people_3 && Array.isArray(contactData.people_3)) {
+        setOriginalPeople3(contactData.people_3);
+        
+        // Convert API format to UI format for the PeopleField component
+        const convertedPeople = contactData.people_3.map(person => ({
+          Id: person.User.Id,
+          FirstName: person.User.FirstName || person.User.Name || '',
+          LastName: person.User.LastName || '',
+          Email: person.User.Email || '',
+          // Keep reference to original data for updates
+          _originalData: person
+        }));
+        
+        setSelectedPeople(convertedPeople);
+      }
+      
+    } catch (err) {
+      setError(err.message);
+      toast.error('Failed to load contact details');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    loadContactData();
+    const loadPageData = async () => {
+      await Promise.all([
+        loadContactData(),
+        loadPeopleForSelection()
+      ]);
+    };
+    
+    loadPageData();
   }, [id]);
 
   const handleCompleteTask = async (taskId) => {
@@ -98,7 +209,9 @@ const [error, setError] = useState(null);
     return errors;
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
+    setIsEditModalOpen(true);
+
     // Pre-populate form with current contact data
     setFormData({
       name: contact.name || '',
@@ -106,10 +219,18 @@ const [error, setError] = useState(null);
       phone: contact.phone || '',
       company: contact.company || '',
       status: contact.status || 'prospect',
-      tags: contact.tags || []
+      tags: contact.tags || [],
+      people_3: contact.people_3 || [],
+      Formula1: contact.Formula1 || '',
+      score_rollup: contact.score_rollup || '',
+      invoicenumber: contact.invoicenumber || ''
     });
+    transformPeopleData(contact.people_3);
+
+    // Load contact data only (people already loaded on page load)
+   // await loadRecordById(id);
+    
     setFormErrors({});
-    setIsEditModalOpen(true);
   };
 
   const handleEditSubmit = async (e) => {
@@ -121,7 +242,11 @@ const [error, setError] = useState(null);
 
     try {
       setIsSubmitting(true);
-      const updatedContact = await contactService.update(contact.Id, formData);
+      const updatedContact = await contactService.update(contact.Id, {
+        ...formData,
+        people_3: selectedPeople,
+        originalPeople3: originalPeople3
+      });
       
       // Update local contact state
       setContact(updatedContact);
@@ -134,6 +259,8 @@ const [error, setError] = useState(null);
         status: 'prospect',
         tags: []
       });
+      setSelectedPeople([]);
+      setOriginalPeople3([]);
       toast.success('Contact updated successfully');
     } catch (err) {
       toast.error('Failed to update contact');
@@ -265,7 +392,7 @@ const tabs = [
             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
               <ApperIcon name="Calendar" className="w-5 h-5 text-purple-600" />
             </div>
-<div>
+            <div>
               <p className="text-sm text-slate-500">Member Since</p>
               <p className="text-sm font-medium text-slate-900">
                 {contact.createdAt ? format(new Date(contact.createdAt), 'MMM dd, yyyy') : 'N/A'}
@@ -273,6 +400,118 @@ const tabs = [
             </div>
           </div>
         </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
+        >
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <ApperIcon name="Calendar" className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Formula 1</p>
+              <p className="text-sm font-medium text-slate-900">
+                {contact.Formula1}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
+        >
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <ApperIcon name="Calendar" className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Score Rollup</p>
+              <p className="text-sm font-medium text-slate-900">
+                {contact.score_rollup}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
+        >
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <ApperIcon name="Calendar" className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Invoice Number</p>
+              <p className="text-sm font-medium text-slate-900">
+                {contact.invoicenumber}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+        <motion.div
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.2 }}
+           className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
+         >
+           <div className="flex items-center space-x-3">
+             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+               <ApperIcon name="Users" className="w-5 h-5 text-purple-600" />
+             </div>
+             <div className="flex-1">
+               <p className="text-sm text-slate-500 mb-2">People 3</p>
+               <div className="flex items-center space-x-2">
+                 {contact.people_3 && contact.people_3.length > 0 ? (
+                   contact.people_3.map((person, index) => {
+                     const user = {
+                       Id: person.User.Id,
+                       FirstName: person.User.FirstName || person.User.Name || '',
+                       LastName: person.User.LastName || '',
+                       Email: person.User.Email || '',
+                       AvatarUrl: person.User.AvatarUrl
+                     };
+                     const avatar = getAvatar(user, availableUsers, true);
+                     const displayName = getDisplayName(user);
+                     
+                     return (
+                       <div
+                         key={person.User.Id}
+                         className="relative group cursor-pointer"
+                         title={displayName}
+                       >
+                         <div className="w-8 h-8 bg-slate-400 rounded-full flex items-center justify-center text-white text-sm font-medium overflow-hidden border-2 border-white shadow-sm hover:shadow-md transition-shadow">
+                           {avatar.type === 'image' ? (
+                             <img 
+                               src={avatar.value} 
+                               alt={displayName}
+                               className="w-full h-full object-cover rounded-full" 
+                             />
+                           ) : (
+                             <span className="text-xs">{avatar.value}</span>
+                           )}
+                         </div>
+                         
+                         {/* Hover tooltip */}
+                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-slate-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                           {displayName}
+                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-l-transparent border-r-transparent border-t-slate-800"></div>
+                         </div>
+                       </div>
+                     );
+                   })
+                 ) : (
+                   <span className="text-sm text-slate-500">No people assigned</span>
+                 )}
+               </div>
+             </div>
+           </div>
+         </motion.div>
       </div>
 
       {/* Tabs */}
@@ -305,7 +544,7 @@ const tabs = [
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Contact Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-<div>
+                  <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Tags</label>
                     <div className="flex flex-wrap gap-2">
                       {contact.tags?.map((tag, index) => (
@@ -584,6 +823,39 @@ const tabs = [
               { value: 'active', label: 'Active' },
               { value: 'inactive', label: 'Inactive' }
             ]}
+          />
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                    label="Formula"
+                    type="text"
+                    value={formData.Formula1}
+                    readOnly
+                  />
+                  <Input
+                    label="RollUp"
+                    type="text"
+                    value={formData.score_rollup}
+                    readOnly
+                  />
+                    <Input
+                    label="Invoice Number"
+                    type="text"
+                    value={formData.invoicenumber}
+                    readOnly
+                  />
+            </div>
+            
+          {/* People Field */}
+          <PeopleField
+            label="People 3"
+            selectedPeople={selectedPeople}
+            onSelectionChange={setSelectedPeople}
+            isMultiple={true}
+            placeholder="Add People..."
+            showCheckbox={true}
+            availableUsers={availableUsers}
+            onSearchPeople={loadPeopleForSelection}
+            isLoading={peopleLoading}
           />
 
           <div className="flex justify-end space-x-3 pt-4">
