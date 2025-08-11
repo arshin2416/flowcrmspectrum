@@ -19,6 +19,8 @@ import Empty from "@/components/ui/Empty";
 import Loading from "@/components/ui/Loading";
 import { contactService } from "@/services/api/contactService";
 import { useTable } from '@/components/hooks/useTable';
+import ApperFileNew from "@/components/molecules/File/ApperFileNew";
+import { FileUploadUtils } from "@/js/fileUploadUtils";
 
 
 const Contacts = () => {
@@ -49,6 +51,7 @@ const Contacts = () => {
   const [selectedPeople, setSelectedPeople] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [peopleLoading, setPeopleLoading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   const loadContacts = async () => {
     try {
@@ -108,6 +111,23 @@ const Contacts = () => {
     // Load people for selection when modal opens
     await loadPeopleForSelection();
     setIsModalOpen(true);
+  };
+
+  // Create centralized file event handlers with custom handleFilesUpdate for create contact
+  const fileEventHandlers = {
+    ...FileUploadUtils.createEventHandlers({
+      setUploadedFiles,
+      setDeletedFiles: () => {}, // Not needed for create contact
+      setFormData: null, // Not using setFormData for create contact
+      uploadedFiles,
+      deletedFiles: []
+    }),
+    // Override handleFilesUpdate for create contact (no existing files to combine)
+    handleFilesUpdate: (files) => {
+      const formattedFiles = FileUploadUtils.extractUploadedFiles(files);
+      setUploadedFiles(formattedFiles);
+      console.log('Updated uploaded files:', formattedFiles);
+    }
   };
 
   useEffect(() => {
@@ -174,7 +194,8 @@ case 'created':
       setIsSubmitting(true);
       const newContact = await contactService.create({
         ...formData,
-        people_3: selectedPeople
+        people_3: selectedPeople,
+        files_1_c: uploadedFiles
       });
       setContacts(prev => [newContact, ...prev]);
       setIsModalOpen(false);
@@ -187,6 +208,7 @@ case 'created':
         tags: []
       });
       setSelectedPeople([]);
+      FileUploadUtils.resetFileState(setUploadedFiles, () => {});
       toast.success('Contact created successfully');
     } catch (err) {
       toast.error('Failed to create contact');
@@ -424,7 +446,10 @@ activeTab={statusFilter}
       {/* Add Contact Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          FileUploadUtils.resetFileState(setUploadedFiles, () => {});
+        }}
         title="Add New Contact"
         size="md"
       >
@@ -487,12 +512,16 @@ activeTab={statusFilter}
             onSearchPeople={loadPeopleForSelection}
             isLoading={peopleLoading}
           />
+          <ApperFileNew />
 
           <div className="flex justify-end space-x-3 pt-4">
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                setIsModalOpen(false);
+                FileUploadUtils.resetFileState(setUploadedFiles, () => {});
+              }}
               disabled={isSubmitting}
             >
               Cancel

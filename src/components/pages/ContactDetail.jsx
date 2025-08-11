@@ -27,6 +27,9 @@ import { taskService } from "@/services/api/taskService";
 import { activityService } from "@/services/api/activityService";
 import { dealService } from "@/services/api/dealService";
 import {  useTable } from "@/components/hooks/useTable";
+import ApperFile from "@/components/molecules/File/ApperFile";
+import { FileUploadUtils } from "@/js/fileUploadUtils";
+
 
 const ContactDetail = () => {
   const { id } = useParams();
@@ -54,6 +57,8 @@ const ContactDetail = () => {
   const [originalPeople3, setOriginalPeople3] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [peopleLoading, setPeopleLoading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [deletedFiles, setDeletedFiles] = useState([]);
 
   const loadContactData = async () => {
     try {
@@ -199,6 +204,15 @@ const ContactDetail = () => {
     }
 };
 
+  // Create centralized file event handlers
+  const fileEventHandlers = FileUploadUtils.createEventHandlers({
+    setUploadedFiles,
+    setDeletedFiles,
+    setFormData,
+    uploadedFiles,
+    deletedFiles
+  });
+
   const validateForm = () => {
     const errors = {};
     if (!formData.name.trim()) errors.name = 'Name is required';
@@ -223,8 +237,22 @@ const ContactDetail = () => {
       people_3: contact.people_3 || [],
       Formula1: contact.Formula1 || '',
       score_rollup: contact.score_rollup || '',
-      invoicenumber: contact.invoicenumber || ''
+      invoicenumber: contact.invoicenumber || '',
+      files_1_c: contact.files_1_c || []
     });
+
+    // Format existing files for ApperFile component using centralized utility
+    const formattedExistingFiles = FileUploadUtils.formatExistingFilesForDisplay(contact.files_1_c || []);
+    
+    console.log('Contact files_1_c:', contact.files_1_c);
+    console.log('Formatted existing files:', formattedExistingFiles);
+    
+    // Initialize uploaded files with existing files
+    setUploadedFiles(formattedExistingFiles);
+    
+    // Reset deleted files when opening edit modal
+    setDeletedFiles([]);
+    
     transformPeopleData(contact.people_3);
 
     // Load contact data only (people already loaded on page load)
@@ -242,10 +270,18 @@ const ContactDetail = () => {
 
     try {
       setIsSubmitting(true);
+      
+      // Filter out deleted files using centralized utility
+      const finalFiles = FileUploadUtils.filterDeletedFiles(uploadedFiles, deletedFiles);
+      
+      console.log('Files being sent for update:', finalFiles);
+      console.log('Deleted files:', deletedFiles);
+      
       const updatedContact = await contactService.update(contact.Id, {
         ...formData,
         people_3: selectedPeople,
-        originalPeople3: originalPeople3
+        originalPeople3: originalPeople3,
+        files_1_c: finalFiles
       });
       
       // Update local contact state
@@ -261,6 +297,7 @@ const ContactDetail = () => {
       });
       setSelectedPeople([]);
       setOriginalPeople3([]);
+      FileUploadUtils.resetFileState(setUploadedFiles, setDeletedFiles);
       toast.success('Contact updated successfully');
     } catch (err) {
       toast.error('Failed to update contact');
@@ -772,9 +809,12 @@ const tabs = [
       )}
 
       {/* Edit Contact Modal */}
-      <Modal
+              <Modal
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          FileUploadUtils.resetFileState(setUploadedFiles, setDeletedFiles);
+        }}
         title="Edit Contact"
         size="md"
       >
@@ -844,7 +884,18 @@ const tabs = [
                     readOnly
                   />
             </div>
-            
+            <ApperFile
+              key={`edit-contact-${contact.Id}-${isEditModalOpen}`}
+              {...FileUploadUtils.getApperFileProps({
+                buttonProperties: { label: 'Upload Files' }
+              })}
+              modelValue={uploadedFiles}
+              files={FileUploadUtils.createDefensiveFileProps(uploadedFiles, deletedFiles)}
+              onUploadComplete={fileEventHandlers.handleFileUploadComplete}
+              onModelValueUpdate={fileEventHandlers.handleFilesUpdate}
+              onFileRemoved={fileEventHandlers.handleFileRemoved}
+              onError={fileEventHandlers.handleFileError}
+            />
           {/* People Field */}
           <PeopleField
             label="People 3"
@@ -858,11 +909,23 @@ const tabs = [
             isLoading={peopleLoading}
           />
 
+
           <div className="flex justify-end space-x-3 pt-4">
-            <Button
+                          <Button
               type="button"
               variant="secondary"
-              onClick={() => setIsEditModalOpen(false)}
+              onClick={() => {
+                setIsEditModalOpen(false);
+                FileUploadUtils.resetFileState(setUploadedFiles, setDeletedFiles);
+                setFormData({
+                  name: '',
+                  email: '',
+                  phone: '',
+                  company: '',
+                  status: 'prospect',
+                  tags: []
+                });
+              }}
               disabled={isSubmitting}
             >
               Cancel
