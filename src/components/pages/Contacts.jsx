@@ -48,8 +48,8 @@ const Contacts = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPeople, setSelectedPeople] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
-  const [peopleLoading, setPeopleLoading] = useState(false);
-
+const [peopleLoading, setPeopleLoading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const loadContacts = async () => {
     try {
       setLoading(true);
@@ -530,6 +530,5 @@ activeTab={statusFilter}
   );
 };
 export default Contacts;
-
 
 
