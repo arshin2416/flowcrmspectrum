@@ -223,7 +223,8 @@ const ContactDetail = () => {
       people_3: contact.people_3 || [],
       Formula1: contact.Formula1 || '',
       score_rollup: contact.score_rollup || '',
-      invoicenumber: contact.invoicenumber || ''
+      invoicenumber: contact.invoicenumber || '',
+      files_1_c: contact.files_1_c || []
     });
     transformPeopleData(contact.people_3);
 

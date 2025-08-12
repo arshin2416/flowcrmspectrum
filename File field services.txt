@@ -1,0 +1,152 @@
+Field Types Doc
+File Field
+File Field - API Usage Guide
+This document outlines the usage of the File Field in the system, including how to create, use, and fetch File field values within a table.
+
+2. Create a Record with File Field
+Endpoint
+POST /rest/{version}/{appIdentifier}/{tableIdOrName}
+Single User Assignment
+{
+	"Record": {
+		"files_2": [
+			{
+				"Path": "attachments/319036/b181a0c6700b49bca84d1b64b6be5bb3/file-example_PDF (1) (1).pdf",
+				"Size": 458.51,
+				"Type": "application/pdf",
+				"Name": "file-example_PDF (1) (1).pdf",
+				"IsExternal": false,
+				"Ordinal": 1
+			}
+		]
+	}
+}
+Multiple User Assignment (Requires supportMultipleValues: true)
+{
+	"Record": {
+		"files_2": [
+			{
+				"Path": "attachments/319036/ab1248b859124d77a3103226e1afdb6c/file-example_PDF (1) (2).pdf",
+				"Size": 458.51,
+				"Type": "application/pdf",
+				"Name": "file-example_PDF (1) (2).pdf",
+				"IsExternal": false,
+				"Ordinal": 1
+			},
+			{
+				"Path": "attachments/319036/cb374ee8ff854210a564760cbaf65795/file-example_PDF (2).pdf",
+				"Size": 458.51,
+				"Type": "application/pdf",
+				"Name": "file-example_PDF (2).pdf",
+				"IsExternal": false,
+				"Ordinal": 2
+			}
+		]
+	}
+}
+Notes
+The File field value must be an array of objects.
+
+If supportMultipleValues is false, only a single user should be provided.
+
+Update Record with File Field
+To update a record that has a File field:
+
+{
+
+"Record": {
+
+"files_2": [
+
+{
+
+"Path": "attachments/319036/605c71f39780470cb2e19dcbf9084078/file-example_PDF (1).pdf",
+
+"Size": 458.51,
+
+"Type": "application/pdf",
+
+"Name": "file-example_PDF (1).pdf",
+
+"IsExternal": false,
+
+"Ordinal": 2
+
+},
+
+{
+
+"Id": 14,
+
+"Type": "application/pdf",
+
+"Name": "file-example_PDF (2).pdf",
+
+"Size": 458.51,
+
+"IsExternal": 0,
+
+"ParentRecordId": 4,
+
+"Ordinal": 1
+
+}
+
+]
+
+}
+
+}
+
+
+Cases: 
+1) When provide [] empty array for the File field to update, it will remove all File attached to this field.
+2) If you did not provide the key then it will not remove the Files and update only provided keys.
+3) Use "Id": file ID and "ParentRecordId" to update existing values.
+4) Omit "Id"and ParentRecordId If you're adding a new File entry.
+5) If you have an existing file and you have not provided the Id for it then it will create duplicate entry for the same file
+6) If you have file id 1 added already and in new payload you provided file id 2 then it will remove file id 1 and override file id 2 instead of this.
+
+3. Fetch Records with File Field
+Endpoint
+POST /rest/v1/{tableApiKey}/{tableId}/records
+Sample Request
+{
+  "Table": {},
+  "Fields": [
+    { "Field": { "Name": "Id" } },
+    { "Field": { "Name": "Name" } },
+    { "Field": { "Name": "file_1" } }
+  ],
+  "OrderBy": [
+    { "FieldName": "Id", "SortType": "Desc" }
+  ],
+  "pagingInfo": {
+    "limit": -1
+  }
+}
+Sample Response
+{
+    "data": {
+        "Id": 3,
+        "Name": null,       
+        "files_2": [
+            {
+                "Id": 12,
+                "Name": "file-example_PDF (1) (1).pdf",
+                "Path": "attachments/319036/b181a0c6700b49bca84d1b64b6be5bb3/file-example_PDF (1) (1).pdf",
+                "Size": 458.51,
+                "Type": "application/pdf",
+                "IsExternal": 0,
+                "Ordinal": 1,
+                "ParentRecordId": 3
+            }
+        ]
+    },
+    "success": true,
+    "message": ""
+}
+
+
+
+

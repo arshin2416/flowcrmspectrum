@@ -19,6 +19,8 @@ import Empty from "@/components/ui/Empty";
 import Loading from "@/components/ui/Loading";
 import { contactService } from "@/services/api/contactService";
 import { useTable } from '@/components/hooks/useTable';
+import ApperFile from "@/components/molecules/File/ApperFile";
+
 
 
 const Contacts = () => {
@@ -174,7 +176,8 @@ case 'created':
       setIsSubmitting(true);
       const newContact = await contactService.create({
         ...formData,
-        people_3: selectedPeople
+        people_3: selectedPeople,
+        files_1_c: uploadedFiles
       });
       setContacts(prev => [newContact, ...prev]);
       setIsModalOpen(false);
@@ -189,7 +192,7 @@ case 'created':
       setSelectedPeople([]);
       toast.success('Contact created successfully');
     } catch (err) {
-      toast.error('Failed to create contact');
+      toast.error('Failed to create Contact');
     } finally {
       setIsSubmitting(false);
     }
@@ -487,6 +490,7 @@ activeTab={statusFilter}
             onSearchPeople={loadPeopleForSelection}
             isLoading={peopleLoading}
           />
+          <ApperFile/>
 
           <div className="flex justify-end space-x-3 pt-4">
             <Button
