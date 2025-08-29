@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -51,6 +51,28 @@ const Contacts = () => {
   const [selectedPeople, setSelectedPeople] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [peopleLoading, setPeopleLoading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+
+  // Memoize the file change handler to prevent infinite re-renders
+  const handleFilesChange = useCallback((files) => {
+    console.log('📁 Contacts.jsx - Files changed:', files);
+    
+    // Prevent updates during render by using a timeout
+    setTimeout(() => {
+      setUploadedFiles(prevFiles => {
+        // Always update to the latest files state from the uploader
+        // This ensures we stay in sync with file additions, removals, and uploads
+        const filesArray = Array.isArray(files) ? files : [];
+        
+        // Only update if files have actually changed to prevent unnecessary re-renders
+        if (JSON.stringify(prevFiles) !== JSON.stringify(filesArray)) {
+          console.log('📁 Contacts.jsx - Updating uploadedFiles from:', prevFiles, 'to:', filesArray);
+          return filesArray;
+        }
+        return prevFiles;
+      });
+    }, 0);
+  }, []);
 
   const loadContacts = async () => {
     try {
@@ -174,10 +196,13 @@ case 'created':
 
     try {
       setIsSubmitting(true);
+      console.log('📋 Contacts.jsx - Submitting with uploadedFiles:', uploadedFiles);
+      console.log('📋 Contacts.jsx - uploadedFiles length:', uploadedFiles.length);
+      
       const newContact = await contactService.create({
         ...formData,
         people_3: selectedPeople,
-        files_1_c: uploadedFiles
+        files_1_c: uploadedFiles // This now contains the latest state from the uploader
       });
       setContacts(prev => [newContact, ...prev]);
       setIsModalOpen(false);
@@ -190,6 +215,7 @@ case 'created':
         tags: []
       });
       setSelectedPeople([]);
+      setUploadedFiles([]);
       toast.success('Contact created successfully');
     } catch (err) {
       toast.error('Failed to create Contact');
@@ -490,7 +516,16 @@ activeTab={statusFilter}
             onSearchPeople={loadPeopleForSelection}
             isLoading={peopleLoading}
           />
-          <ApperFile/>
+
+          {/* File Field */}
+          <ApperFile
+            label="Files"
+            initialFiles={uploadedFiles}
+            onFilesChange={handleFilesChange}
+            maxFiles={50}
+            allowedTypes={['pdf', 'jpg', 'png', 'doc', 'docx', 'xlsx', 'txt']}
+            disabled={isSubmitting}
+          />
 
           <div className="flex justify-end space-x-3 pt-4">
             <Button

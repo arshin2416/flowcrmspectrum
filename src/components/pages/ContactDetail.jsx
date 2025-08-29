@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -27,6 +27,8 @@ import { taskService } from "@/services/api/taskService";
 import { activityService } from "@/services/api/activityService";
 import { dealService } from "@/services/api/dealService";
 import {  useTable } from "@/components/hooks/useTable";
+import ApperFile from "@/components/molecules/File/ApperFile";
+import { FileFieldUtils } from "@/services/utils/fileFieldUtils";
 
 const ContactDetail = () => {
   const { id } = useParams();
@@ -54,6 +56,22 @@ const ContactDetail = () => {
   const [originalPeople3, setOriginalPeople3] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [peopleLoading, setPeopleLoading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [originalFiles1C, setOriginalFiles1C] = useState([]);
+
+  // Memoize the file change handler to prevent infinite re-renders
+  const handleFilesChange = useCallback((files) => {
+    // Prevent updates during render by using a timeout
+    setTimeout(() => {
+      setUploadedFiles(prevFiles => {
+        // Only update if files have actually changed
+        if (JSON.stringify(prevFiles) !== JSON.stringify(files)) {
+          return files;
+        }
+        return prevFiles;
+      });
+    }, 0);
+  }, []);
 
   const loadContactData = async () => {
     try {
@@ -89,6 +107,13 @@ const ContactDetail = () => {
         
         setSelectedPeople(convertedPeople);
       }
+
+      // Store original files_1_c data and convert to UI format
+      if (contactData.files_1_c && Array.isArray(contactData.files_1_c)) {
+        setOriginalFiles1C(contactData.files_1_c);
+        const convertedFiles = FileFieldUtils.toUIFormat(contactData.files_1_c);
+        setUploadedFiles(convertedFiles);
+      }
       
     } catch (err) {
       setError(err.message);
@@ -97,8 +122,6 @@ const ContactDetail = () => {
       setLoading(false);
     }
   };
-
-
 
   // Load people for selection (used in modals)
   const loadPeopleForSelection = async (searchTerm = '') => {
@@ -167,6 +190,13 @@ const ContactDetail = () => {
         
         setSelectedPeople(convertedPeople);
       }
+
+      // Store original files_1_c data and convert to UI format
+      if (contactData.files_1_c && Array.isArray(contactData.files_1_c)) {
+        setOriginalFiles1C(contactData.files_1_c);
+        const convertedFiles = FileFieldUtils.toUIFormat(contactData.files_1_c);
+        setUploadedFiles(convertedFiles);
+      }
       
     } catch (err) {
       setError(err.message);
@@ -227,6 +257,13 @@ const ContactDetail = () => {
       files_1_c: contact.files_1_c || []
     });
     transformPeopleData(contact.people_3);
+    
+    // Load files data
+    if (contact.files_1_c && Array.isArray(contact.files_1_c)) {
+      setOriginalFiles1C(contact.files_1_c);
+      const convertedFiles = FileFieldUtils.toUIFormat(contact.files_1_c);
+      setUploadedFiles(convertedFiles);
+    }
 
     // Load contact data only (people already loaded on page load)
    // await loadRecordById(id);
@@ -235,6 +272,7 @@ const ContactDetail = () => {
   };
 
   const handleEditSubmit = async (e) => {
+    console.log('uploadedFiles::', uploadedFiles);
     e.preventDefault();
     const errors = validateForm();
     setFormErrors(errors);
@@ -246,7 +284,9 @@ const ContactDetail = () => {
       const updatedContact = await contactService.update(contact.Id, {
         ...formData,
         people_3: selectedPeople,
-        originalPeople3: originalPeople3
+        originalPeople3: originalPeople3,
+        files_1_c: uploadedFiles,
+        originalFiles1C: originalFiles1C
       });
       
       // Update local contact state
@@ -262,6 +302,8 @@ const ContactDetail = () => {
       });
       setSelectedPeople([]);
       setOriginalPeople3([]);
+      setUploadedFiles([]);
+      setOriginalFiles1C([]);
       toast.success('Contact updated successfully');
     } catch (err) {
       toast.error('Failed to update contact');
@@ -580,6 +622,48 @@ const tabs = [
                   <div className="text-sm text-slate-600">Interactions</div>
                 </div>
               </div>
+
+              {/* Files Section */}
+              {contact.files_1_c && contact.files_1_c.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Attached Files</h3>
+                  <div className="space-y-2">
+                    {FileFieldUtils.toUIFormat(contact.files_1_c).map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg hover:shadow-sm transition-shadow"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-slate-200 rounded flex items-center justify-center">
+                            <ApperIcon 
+                              name={FileFieldUtils.getFileIcon(file.type)} 
+                              className="w-4 h-4 text-slate-600" 
+                            />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">
+                              {file.name}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {FileFieldUtils.formatFileSize(file.size)}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* <Button
+                          variant="ghost"
+                          size="sm"
+                          icon="Download"
+                          onClick={() => {
+                            // TODO: Implement file download
+                            console.log('Download file:', file);
+                          }}
+                        /> */}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -857,6 +941,16 @@ const tabs = [
             availableUsers={availableUsers}
             onSearchPeople={loadPeopleForSelection}
             isLoading={peopleLoading}
+          />
+
+          {/* File Field */}
+          <ApperFile
+            label="Files"
+            initialFiles={originalFiles1C}
+            onFilesChange={handleFilesChange}
+            maxFiles={50}
+            allowedTypes={['pdf', 'jpg', 'png', 'doc', 'docx', 'xlsx', 'txt']}
+            disabled={isSubmitting}
           />
 
           <div className="flex justify-end space-x-3 pt-4">
