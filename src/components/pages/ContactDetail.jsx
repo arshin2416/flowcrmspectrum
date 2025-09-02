@@ -28,7 +28,8 @@ import { activityService } from "@/services/api/activityService";
 import { dealService } from "@/services/api/dealService";
 import {  useTable } from "@/components/hooks/useTable";
 import ApperFile from "@/components/molecules/File/ApperFile";
-import { FileFieldUtils } from "@/services/utils/fileFieldUtils";
+// import { FileFieldUtils } from "@/services/utils/fileFieldUtils";
+const { ApperFileUploader, ApperClient, ApperUtilities } = window.ApperSDK;
 
 const ContactDetail = () => {
   const { id } = useParams();
@@ -111,7 +112,7 @@ const ContactDetail = () => {
       // Store original files_1_c data and convert to UI format
       if (contactData.files_1_c && Array.isArray(contactData.files_1_c)) {
         setOriginalFiles1C(contactData.files_1_c);
-        const convertedFiles = FileFieldUtils.toUIFormat(contactData.files_1_c);
+        const convertedFiles = ApperUtilities.fileField.toUIFormat(contactData.files_1_c);
         setUploadedFiles(convertedFiles);
       }
       
@@ -194,7 +195,7 @@ const ContactDetail = () => {
       // Store original files_1_c data and convert to UI format
       if (contactData.files_1_c && Array.isArray(contactData.files_1_c)) {
         setOriginalFiles1C(contactData.files_1_c);
-        const convertedFiles = FileFieldUtils.toUIFormat(contactData.files_1_c);
+        const convertedFiles = ApperUtilities.fileField.toUIFormat(contactData.files_1_c);
         setUploadedFiles(convertedFiles);
       }
       
@@ -261,7 +262,7 @@ const ContactDetail = () => {
     // Load files data
     if (contact.files_1_c && Array.isArray(contact.files_1_c)) {
       setOriginalFiles1C(contact.files_1_c);
-      const convertedFiles = FileFieldUtils.toUIFormat(contact.files_1_c);
+      const convertedFiles = ApperUtilities.fileField.toUIFormat(contact.files_1_c);
       setUploadedFiles(convertedFiles);
     }
 
@@ -628,7 +629,7 @@ const tabs = [
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">Attached Files</h3>
                   <div className="space-y-2">
-                    {FileFieldUtils.toUIFormat(contact.files_1_c).map((file) => (
+                    {ApperUtilities.fileField.toUIFormat(contact.files_1_c).map((file) => (
                       <div
                         key={file.id}
                         className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg hover:shadow-sm transition-shadow"
@@ -636,7 +637,7 @@ const tabs = [
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-slate-200 rounded flex items-center justify-center">
                             <ApperIcon 
-                              name={FileFieldUtils.getFileIcon(file.type)} 
+                              name={ApperUtilities.fileField.getFileIcon(file.type)} 
                               className="w-4 h-4 text-slate-600" 
                             />
                           </div>
@@ -645,7 +646,7 @@ const tabs = [
                               {file.name}
                             </div>
                             <div className="text-xs text-slate-500">
-                              {FileFieldUtils.formatFileSize(file.size)}
+                              {ApperUtilities.fileField.formatFileSize(file.size)}
                             </div>
                           </div>
                         </div>
@@ -656,7 +657,6 @@ const tabs = [
                           icon="Download"
                           onClick={() => {
                             // TODO: Implement file download
-                            console.log('Download file:', file);
                           }}
                         /> */}
                       </div>

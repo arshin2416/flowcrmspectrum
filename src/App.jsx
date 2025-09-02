@@ -35,7 +35,7 @@ function AppContent() {
   
   // Initialize ApperUI once when the app loads
   useEffect(() => {
-    const { ApperClient, ApperUI, ApperFileUploader } = window.ApperSDK;
+    const { ApperClient, ApperUI, ApperFileUploader, fileFieldUtils } = window.ApperSDK;
     
     const client = new ApperClient({
       apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,

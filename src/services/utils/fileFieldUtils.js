@@ -56,7 +56,6 @@ export const FileFieldUtils = {
     return uiFiles.map((file, index) => {
       // Check if this file has original data (was previously uploaded)
       if (file._originalData) {
-        console.log('file:', file);
         
         // File was already uploaded, include Id for update
         return {

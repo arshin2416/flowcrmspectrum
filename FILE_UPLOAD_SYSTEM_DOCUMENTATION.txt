@@ -308,7 +308,6 @@ import ApperFile from '@/components/molecules/File/ApperFile';
 5.2 FILE CHANGE HANDLER
 =======================
 const handleFilesChange = useCallback((files) => {
-    console.log('Files changed:', files);
     
     setTimeout(() => {
         setUploadedFiles(prevFiles => {
@@ -333,7 +332,6 @@ const handleSubmit = async (formData) => {
     
     try {
         const result = await contactService.create(contactData);
-        console.log('Contact created with files:', result);
     } catch (error) {
         console.error('Error creating contact:', error);
     }

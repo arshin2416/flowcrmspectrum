@@ -55,7 +55,6 @@ const Contacts = () => {
 
   // Memoize the file change handler to prevent infinite re-renders
   const handleFilesChange = useCallback((files) => {
-    console.log('📁 Contacts.jsx - Files changed:', files);
     
     // Prevent updates during render by using a timeout
     setTimeout(() => {
@@ -66,7 +65,6 @@ const Contacts = () => {
         
         // Only update if files have actually changed to prevent unnecessary re-renders
         if (JSON.stringify(prevFiles) !== JSON.stringify(filesArray)) {
-          console.log('📁 Contacts.jsx - Updating uploadedFiles from:', prevFiles, 'to:', filesArray);
           return filesArray;
         }
         return prevFiles;
@@ -196,8 +194,6 @@ case 'created':
 
     try {
       setIsSubmitting(true);
-      console.log('📋 Contacts.jsx - Submitting with uploadedFiles:', uploadedFiles);
-      console.log('📋 Contacts.jsx - uploadedFiles length:', uploadedFiles.length);
       
       const newContact = await contactService.create({
         ...formData,

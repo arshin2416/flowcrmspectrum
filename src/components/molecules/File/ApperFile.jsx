@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ApperIcon from '@/components/ApperIcon';
 import Button from '@/components/atoms/Button';
-import { FileFieldUtils } from '@/services/utils/fileFieldUtils';
+// import { FileFieldUtils } from '@/services/utils/fileFieldUtils';
 
-const { ApperFileUploader, ApperClient } = window.ApperSDK;
+const { ApperFileUploader, ApperClient, ApperUtilities } = window.ApperSDK;
 
 const ApperFile = ({ 
     label = "Files", 
@@ -34,16 +34,13 @@ const ApperFile = ({
                 const clientConfig = {
                     apperProjectId: "600c31700dfe4ae88009ac4c221f5d83",
                     apperPublicKey: "123",
-                    apperBaseUrl: "https://api.apper.ai" // This was missing!
                 };
                 
-                console.log('Initializing ApperClient with config:', clientConfig);
                 
                 const client = new ApperClient(clientConfig);
                 setApperClient(client); // Store in state!
                 setIsReady(true);
                 
-                console.log('✅ ApperClient initialized successfully');
                 
             } catch (err) {
                 console.error('❌ Failed to initialize ApperClient:', err);
@@ -56,13 +53,12 @@ const ApperFile = ({
     // Initialize uploaded files from props (don't notify parent on initial load)
     useEffect(() => {
         if (initialFiles && Array.isArray(initialFiles)) {
-            console.log('🔧 ApperFile - Initializing with initialFiles:', initialFiles);
             
             // Check if initialFiles are already in UI format or need conversion
             let formattedFiles;
             if (initialFiles.length > 0 && initialFiles[0].Id !== undefined) {
                 // These are API format files, convert to UI format
-                formattedFiles = FileFieldUtils.toUIFormat(initialFiles);
+                formattedFiles = ApperUtilities.fileField.toUIFormat(initialFiles);
             } else {
                 // These are already UI format files, use as-is but ensure they have all required properties
                 formattedFiles = initialFiles.map(file => ({
@@ -77,7 +73,6 @@ const ApperFile = ({
                 }));
             }
             
-            console.log('🔧 ApperFile - Formatted initialFiles:', formattedFiles);
             
             setUploadedFiles(prevFiles => {
                 // Only update if files have actually changed and prevent notification during initialization
@@ -97,12 +92,9 @@ const ApperFile = ({
 
     // Helper function to update files and notify parent
     const updateFiles = (newFiles) => {
-        console.log('📁 ApperFile - updateFiles called with:', newFiles);
         setUploadedFiles(newFiles);
         // Use timeout to prevent setState during render
         setTimeout(() => {
-            console.log('📁 ApperFile - About to call onFilesChange with:', newFiles);
-            console.log('📁 ApperFile - onFilesChange type:', typeof onFilesChange);
             if (typeof onFilesChange === 'function') {
                 onFilesChange(newFiles);
             }
@@ -111,7 +103,7 @@ const ApperFile = ({
 
     // Remove a file from the uploaded files
     const removeFile = (fileId) => {
-        const newFiles = FileFieldUtils.removeFile(uploadedFiles, fileId);
+        const newFiles = ApperUtilities.fileField.removeFile(uploadedFiles, fileId);
         updateFiles(newFiles);
     };
 
@@ -124,7 +116,6 @@ const ApperFile = ({
 
         try {
             setUploaderError(null);
-            console.log('🚀 Showing file uploader with client:', apperClient);
 
             const config = {
                 // UI Configuration
@@ -152,9 +143,6 @@ const ApperFile = ({
                 
                 // NEW: File state change callback
                 onUploadedFilesChanged: (files) => {
-                    console.log('📁 ApperFile - Files changed from uploader:', files);
-                    console.log('📁 ApperFile - Files length:', files ? files.length : 'files is null/undefined');
-                    console.log('📁 ApperFile - About to call updateFiles with:', files);
                     updateFiles(files);
                 },
                 
@@ -175,14 +163,8 @@ const ApperFile = ({
 
                 onProgress: (progress) => {
                     setIsUploading(true);
-                    console.log('📊 Upload progress:', progress);
                 }
             };
-
-            console.log('📤 Config for showFileUploader:', config);
-            console.log('📤 Config.onUploadedFilesChanged:', config.onUploadedFilesChanged);
-            console.log('📤 Config.onUploadedFilesChanged type:', typeof config.onUploadedFilesChanged);
-            console.log('🗂️ Current uploadedFiles when showing uploader:', uploadedFiles);
 
             // Mount the Vue component in React
             await ApperFileUploader.showFileUploader(
@@ -211,7 +193,6 @@ const ApperFile = ({
     // Refresh uploader with current files
     const refreshUploader = async () => {
         if (isReady && !disabled) {
-            console.log('🔄 Refreshing uploader with current files:', uploadedFiles);
             await showUploader();
         }
     };
@@ -236,54 +217,7 @@ const ApperFile = ({
                 </div>
             )}
 
-            {/* Uploaded Files List */}
-            {/* {uploadedFiles.length > 0 && (
-                <div className="space-y-2">
-                    <div className="text-sm font-medium text-slate-700">
-                        Uploaded Files ({uploadedFiles.length})
-                    </div>
-                    <div className="space-y-2">
-                        {uploadedFiles.map((file) => (
-                            <div
-                                key={file.id || file.name}
-                                className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg"
-                            >
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-8 h-8 bg-slate-200 rounded flex items-center justify-center">
-                                        <ApperIcon 
-                                            name={FileFieldUtils.getFileIcon(file.type)} 
-                                            className="w-4 h-4 text-slate-600" 
-                                        />
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-medium text-slate-900">
-                                            {file.name}
-                                        </div>
-                                        <div className="text-xs text-slate-500">
-                                            {FileFieldUtils.formatFileSize(file.size)}
-                                            {file.isNew && (
-                                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                    New
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                {!disabled && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        icon="X"
-                                        onClick={() => removeFile(file.id)}
-                                        className="text-slate-400 hover:text-red-500"
-                                    />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )} */}
+            
 
             {/* Upload Status */}
             {isUploading && (

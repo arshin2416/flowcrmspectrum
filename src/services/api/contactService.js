@@ -1,4 +1,5 @@
 import { FileFieldUtils } from '../utils/fileFieldUtils';
+const { ApperFileUploader, ApperClient, ApperUtilities } = window.ApperSDK;
 
 // Utility functions for people field handling
 const PeopleFieldUtils = {
@@ -198,7 +199,6 @@ if (!response.success) {
       });
       
       // Map UI format to database fields and include only Updateable fields
-      console.log('🚀 contactService.create - Input contactData.files_1_c:', contactData.files_1_c);
       
       const dbData = {
         Name: contactData.name,
@@ -209,10 +209,9 @@ if (!response.success) {
         Tags: contactData.tags ? contactData.tags.join(',') : '',
         created_at: new Date().toISOString(),
         people_3: PeopleFieldUtils.toCreateFormat(contactData.people_3),
-        files_1_c: FileFieldUtils.toCreateFormat(contactData.files_1_c)
+        files_1_c: ApperUtilities.fileField.toCreateFormat(contactData.files_1_c)
       };
       
-      console.log('🚀 contactService.create - Final dbData.files_1_c:', dbData.files_1_c);
       
       const params = {
         records: [dbData]
@@ -286,7 +285,7 @@ if (!response.success) {
         status: contactData.status,
         Tags: contactData.tags ? contactData.tags.join(',') : '',
         people_3: PeopleFieldUtils.toUpdateFormat(contactData.people_3, contactData.originalPeople3),
-        files_1_c: FileFieldUtils.toUpdateFormat(contactData.files_1_c, contactData.originalFiles1C)
+        files_1_c: ApperUtilities.fileField.toUpdateFormat(contactData.files_1_c, contactData.originalFiles1C)
       };
       
       const params = {
