@@ -57,7 +57,6 @@ const ContactDetail = () => {
 
   const loadContactData = async () => {
     try {
-   
       setLoading(true);
       setError(null);
       
