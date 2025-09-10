@@ -32,9 +32,6 @@ COMPONENT LAYER
 - ApperFile.jsx: Main file upload component
 - UI components for file display and management
 
-UTILITY LAYER  
-- fileFieldUtils.js: Data transformation utilities
-- File validation and formatting functions
 
 API LAYER
 - contactService.js: API integration for file operations
@@ -95,10 +92,6 @@ const uploadConfig = {
     showRestrictions: true
 };
 
-2.2 FILE FIELD UTILITIES (src/services/utils/fileFieldUtils.js)
-===============================================================
-
-PURPOSE: Comprehensive utility functions for file field handling
 
 MAIN FUNCTIONS:
 ---------------

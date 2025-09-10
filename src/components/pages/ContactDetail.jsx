@@ -28,12 +28,171 @@ import { activityService } from "@/services/api/activityService";
 import { dealService } from "@/services/api/dealService";
 import {  useTable } from "@/components/hooks/useTable";
 import ApperFile from "@/components/molecules/File/ApperFile";
-// import { FileFieldUtils } from "@/services/utils/fileFieldUtils";
-const { ApperFileUploader, ApperClient, ApperUtilities } = window.ApperSDK;
+import { FileProvider, useFileContext } from "@/contexts/FileContext";
+const { ApperFileUploader, ApperClient } = window.ApperSDK;
 
-const ContactDetail = () => {
+// Edit Contact Form Component
+const EditContactForm = ({ 
+  formData, 
+  setFormData, 
+  formErrors, 
+  isSubmitting, 
+  selectedPeople, 
+  setSelectedPeople, 
+  availableUsers, 
+  peopleLoading, 
+  loadPeopleForSelection, 
+  handleEditSubmit,
+  setIsEditModalOpen,
+  originalFiles1C,
+  originalFiles4C 
+}) => {
+  const { initializeField } = useFileContext();
+
+  // Initialize file fields when component mounts
+  useEffect(() => {
+    // Initialize file fields with original data
+    if (originalFiles1C && originalFiles1C.length > 0) {
+      const convertedFiles = ApperFileUploader.toUIFormat(originalFiles1C);
+      initializeField('files_1_c', convertedFiles);
+    } else {
+      initializeField('files_1_c', []);
+    }
+    
+    if (originalFiles4C && originalFiles4C.length > 0) {
+      const convertedFiles = ApperFileUploader.toUIFormat(originalFiles4C);
+      initializeField('files_4_c', convertedFiles);
+    } else {
+      initializeField('files_4_c', []);
+    }
+  }, [originalFiles1C, originalFiles4C, initializeField]);
+
+  return (
+    <form onSubmit={handleEditSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Full Name"
+          value={formData.name}
+          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          error={formErrors.name}
+          required
+        />
+        <Input
+          label="Email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+          error={formErrors.email}
+          required
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Phone"
+          value={formData.phone}
+          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+          error={formErrors.phone}
+          required
+        />
+        <Input
+          label="Company"
+          value={formData.company}
+          onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+          error={formErrors.company}
+          required
+        />
+      </div>
+
+      <Select
+        label="Status"
+        value={formData.status}
+        onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+        options={[
+          { value: 'prospect', label: 'Prospect' },
+          { value: 'active', label: 'Active' },
+          { value: 'inactive', label: 'Inactive' }
+        ]}
+      />
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Formula"
+          type="text"
+          value={formData.Formula1}
+          readOnly
+        />
+        <Input
+          label="RollUp"
+          type="text"
+          value={formData.score_rollup}
+          readOnly
+        />
+        <Input
+          label="Invoice Number"
+          type="text"
+          value={formData.invoicenumber}
+          readOnly
+        />
+      </div>
+        
+      {/* People Field */}
+      <PeopleField
+        label="People 3"
+        selectedPeople={selectedPeople}
+        onSelectionChange={setSelectedPeople}
+        isMultiple={true}
+        placeholder="Add People..."
+        showCheckbox={true}
+        availableUsers={availableUsers}
+        onSearchPeople={loadPeopleForSelection}
+        isLoading={peopleLoading}
+      />
+
+      {/* File Fields using FileContext */}
+      <ApperFile
+        fieldId="files_1_c"
+        label="Files 1"
+        maxFiles={50}
+        allowedTypes={['pdf', 'jpg', 'png', 'doc', 'docx', 'xlsx', 'txt']}
+        disabled={isSubmitting}
+        allowMultiple={true}
+      />
+
+      <ApperFile
+        fieldId="files_4_c"
+        label="Files 4"
+        maxFiles={50}
+        allowedTypes={['pdf', 'jpg', 'png', 'doc', 'docx', 'xlsx', 'txt']}
+        disabled={isSubmitting}
+        allowMultiple={true}
+      />
+
+      <div className="flex justify-end space-x-3 pt-4">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setIsEditModalOpen(false)}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          variant="primary"
+          loading={isSubmitting}
+        >
+          Update Contact
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+const ContactDetailContent = () => {
   const { id } = useParams();
   const { getAvatar, getDisplayName, getWhereGroups } = useTable();
+  const { getAllFiles, clearAllFields } = useFileContext();
   const [contact, setContact] = useState(null);
   const [deals, setDeals] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -57,22 +216,8 @@ const ContactDetail = () => {
   const [originalPeople3, setOriginalPeople3] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [peopleLoading, setPeopleLoading] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [originalFiles1C, setOriginalFiles1C] = useState([]);
-
-  // Memoize the file change handler to prevent infinite re-renders
-  const handleFilesChange = useCallback((files) => {
-    // Prevent updates during render by using a timeout
-    setTimeout(() => {
-      setUploadedFiles(prevFiles => {
-        // Only update if files have actually changed
-        if (JSON.stringify(prevFiles) !== JSON.stringify(files)) {
-          return files;
-        }
-        return prevFiles;
-      });
-    }, 0);
-  }, []);
+  const [originalFiles4C, setOriginalFiles4C] = useState([]);
 
   const loadContactData = async () => {
     try {
@@ -109,11 +254,12 @@ const ContactDetail = () => {
         setSelectedPeople(convertedPeople);
       }
 
-      // Store original files_1_c data and convert to UI format
+      // Store original files data
       if (contactData.files_1_c && Array.isArray(contactData.files_1_c)) {
         setOriginalFiles1C(contactData.files_1_c);
-        const convertedFiles = ApperUtilities.fileField.toUIFormat(contactData.files_1_c);
-        setUploadedFiles(convertedFiles);
+      }
+      if (contactData.files_4_c && Array.isArray(contactData.files_4_c)) {
+        setOriginalFiles4C(contactData.files_4_c);
       }
       
     } catch (err) {
@@ -192,13 +338,13 @@ const ContactDetail = () => {
         setSelectedPeople(convertedPeople);
       }
 
-      // Store original files_1_c data and convert to UI format
+      // Store original files data
       if (contactData.files_1_c && Array.isArray(contactData.files_1_c)) {
         setOriginalFiles1C(contactData.files_1_c);
-        const convertedFiles = ApperUtilities.fileField.toUIFormat(contactData.files_1_c);
-        setUploadedFiles(convertedFiles);
       }
-      
+      if (contactData.files_4_c && Array.isArray(contactData.files_4_c)) {
+        setOriginalFiles4C(contactData.files_4_c);
+      }
     } catch (err) {
       setError(err.message);
       toast.error('Failed to load contact details');
@@ -241,6 +387,7 @@ const ContactDetail = () => {
   };
 
   const handleEdit = async () => {
+    debugger
     setIsEditModalOpen(true);
 
     // Pre-populate form with current contact data
@@ -255,25 +402,23 @@ const ContactDetail = () => {
       Formula1: contact.Formula1 || '',
       score_rollup: contact.score_rollup || '',
       invoicenumber: contact.invoicenumber || '',
-      files_1_c: contact.files_1_c || []
+      files_1_c: contact.files_1_c || [],
+      files_4_c: contact.files_4_c || []
     });
     transformPeopleData(contact.people_3);
     
-    // Load files data
+    // Store original files data for the form
     if (contact.files_1_c && Array.isArray(contact.files_1_c)) {
       setOriginalFiles1C(contact.files_1_c);
-      const convertedFiles = ApperUtilities.fileField.toUIFormat(contact.files_1_c);
-      setUploadedFiles(convertedFiles);
     }
-
-    // Load contact data only (people already loaded on page load)
-   // await loadRecordById(id);
+    if (contact.files_4_c && Array.isArray(contact.files_4_c)) {
+      setOriginalFiles4C(contact.files_4_c);
+    }
     
     setFormErrors({});
   };
 
   const handleEditSubmit = async (e) => {
-    console.log('uploadedFiles::', uploadedFiles);
     e.preventDefault();
     const errors = validateForm();
     setFormErrors(errors);
@@ -282,12 +427,19 @@ const ContactDetail = () => {
 
     try {
       setIsSubmitting(true);
+      debugger;
+      
+      // Get all files from context
+      const allFiles = getAllFiles();
+      
       const updatedContact = await contactService.update(contact.Id, {
         ...formData,
         people_3: selectedPeople,
         originalPeople3: originalPeople3,
-        files_1_c: uploadedFiles,
-        originalFiles1C: originalFiles1C
+        files_1_c: allFiles.files_1_c || [],
+        originalFiles1C: originalFiles1C,
+        files_4_c: allFiles.files_4_c || [],
+        originalFiles4C: originalFiles4C
       });
       
       // Update local contact state
@@ -303,8 +455,9 @@ const ContactDetail = () => {
       });
       setSelectedPeople([]);
       setOriginalPeople3([]);
-      setUploadedFiles([]);
+      clearAllFields(); // Clear all file fields
       setOriginalFiles1C([]);
+      setOriginalFiles4C([]);
       toast.success('Contact updated successfully');
     } catch (err) {
       toast.error('Failed to update contact');
@@ -629,7 +782,7 @@ const tabs = [
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">Attached Files</h3>
                   <div className="space-y-2">
-                    {ApperUtilities.fileField.toUIFormat(contact.files_1_c).map((file) => (
+                    {ApperFileUploader.toUIFormat(contact.files_1_c).map((file) => (
                       <div
                         key={file.id}
                         className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg hover:shadow-sm transition-shadow"
@@ -637,7 +790,7 @@ const tabs = [
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-slate-200 rounded flex items-center justify-center">
                             <ApperIcon 
-                              name={ApperUtilities.fileField.getFileIcon(file.type)} 
+                              name={ApperFileUploader.getFileIcon(file.type)} 
                               className="w-4 h-4 text-slate-600" 
                             />
                           </div>
@@ -646,7 +799,46 @@ const tabs = [
                               {file.name}
                             </div>
                             <div className="text-xs text-slate-500">
-                              {ApperUtilities.fileField.formatFileSize(file.size)}
+                              {ApperFileUploader.formatFileSize(file.size)}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* <Button
+                          variant="ghost"
+                          size="sm"
+                          icon="Download"
+                          onClick={() => {
+                            // TODO: Implement file download
+                          }}
+                        /> */}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+                {contact.files_4_c && contact.files_4_c.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Attached Files 4 </h3>
+                  <div className="space-y-2">
+                    {ApperFileUploader.toUIFormat(contact.files_4_c).map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg hover:shadow-sm transition-shadow"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-slate-200 rounded flex items-center justify-center">
+                            <ApperIcon 
+                              name={ApperFileUploader.getFileIcon(file.type)} 
+                              className="w-4 h-4 text-slate-600" 
+                            />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">
+                              {file.name}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {ApperFileUploader.formatFileSize(file.size)}
                             </div>
                           </div>
                         </div>
@@ -666,6 +858,8 @@ const tabs = [
               )}
             </div>
           )}
+          
+
 
           {/* Deals Tab */}
           {activeTab === 'deals' && (
@@ -863,116 +1057,32 @@ const tabs = [
         title="Edit Contact"
         size="md"
       >
-        <form onSubmit={handleEditSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Full Name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              error={formErrors.name}
-              required
-            />
-            <Input
-              label="Email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              error={formErrors.email}
-              required
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Phone"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              error={formErrors.phone}
-              required
-            />
-            <Input
-              label="Company"
-              value={formData.company}
-              onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-              error={formErrors.company}
-              required
-            />
-          </div>
-
-          <Select
-            label="Status"
-            value={formData.status}
-            onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-            options={[
-              { value: 'prospect', label: 'Prospect' },
-              { value: 'active', label: 'Active' },
-              { value: 'inactive', label: 'Inactive' }
-            ]}
-          />
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                    label="Formula"
-                    type="text"
-                    value={formData.Formula1}
-                    readOnly
-                  />
-                  <Input
-                    label="RollUp"
-                    type="text"
-                    value={formData.score_rollup}
-                    readOnly
-                  />
-                    <Input
-                    label="Invoice Number"
-                    type="text"
-                    value={formData.invoicenumber}
-                    readOnly
-                  />
-            </div>
-            
-          {/* People Field */}
-          <PeopleField
-            label="People 3"
-            selectedPeople={selectedPeople}
-            onSelectionChange={setSelectedPeople}
-            isMultiple={true}
-            placeholder="Add People..."
-            showCheckbox={true}
-            availableUsers={availableUsers}
-            onSearchPeople={loadPeopleForSelection}
-            isLoading={peopleLoading}
-          />
-
-          {/* File Field */}
-          <ApperFile
-            label="Files"
-            initialFiles={originalFiles1C}
-            onFilesChange={handleFilesChange}
-            maxFiles={50}
-            allowedTypes={['pdf', 'jpg', 'png', 'doc', 'docx', 'xlsx', 'txt']}
-            disabled={isSubmitting}
-          />
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setIsEditModalOpen(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={isSubmitting}
-            >
-              Update Contact
-            </Button>
-          </div>
-        </form>
+        <EditContactForm
+          formData={formData}
+          setFormData={setFormData}
+          formErrors={formErrors}
+          isSubmitting={isSubmitting}
+          selectedPeople={selectedPeople}
+          setSelectedPeople={setSelectedPeople}
+          availableUsers={availableUsers}
+          peopleLoading={peopleLoading}
+          loadPeopleForSelection={loadPeopleForSelection}
+          handleEditSubmit={handleEditSubmit}
+          setIsEditModalOpen={setIsEditModalOpen}
+          originalFiles1C={originalFiles1C}
+          originalFiles4C={originalFiles4C}
+        />
       </Modal>
     </div>
+  );
+};
+
+// Main wrapper component with FileProvider
+const ContactDetail = () => {
+  return (
+    <FileProvider>
+      <ContactDetailContent />
+    </FileProvider>
   );
 };
 

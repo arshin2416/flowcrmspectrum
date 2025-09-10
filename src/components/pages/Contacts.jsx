@@ -20,11 +20,130 @@ import Loading from "@/components/ui/Loading";
 import { contactService } from "@/services/api/contactService";
 import { useTable } from '@/components/hooks/useTable';
 import ApperFile from "@/components/molecules/File/ApperFile";
+import { FileProvider, useFileContext } from "@/contexts/FileContext";
 
 
 
-const Contacts = () => {
+// Contact form component that uses FileContext
+const ContactForm = ({ 
+  formData, 
+  setFormData, 
+  formErrors, 
+  isSubmitting, 
+  selectedPeople, 
+  setSelectedPeople, 
+  availableUsers, 
+  peopleLoading, 
+  loadPeopleForSelection, 
+  handleSubmit,
+  setIsModalOpen 
+}) => {
+  const { getFieldFiles } = useFileContext();
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Full Name"
+          value={formData.name}
+          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          error={formErrors.name}
+          required
+        />
+        <Input
+          label="Email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+          error={formErrors.email}
+          required
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Phone"
+          value={formData.phone}
+          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+          error={formErrors.phone}
+          required
+        />
+        <Input
+          label="Company"
+          value={formData.company}
+          onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+          error={formErrors.company}
+          required
+        />
+      </div>
+
+      <Select
+        label="Status"
+        value={formData.status}
+        onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+        options={[
+          { value: 'prospect', label: 'Prospect' },
+          { value: 'active', label: 'Active' },
+          { value: 'inactive', label: 'Inactive' }
+        ]}
+      />
+
+      {/* People Field */}
+      <PeopleField
+        label="People 3"
+        selectedPeople={selectedPeople}
+        onSelectionChange={setSelectedPeople}
+        isMultiple={true}
+        placeholder="Add People..."
+        showCheckbox={true}
+        availableUsers={availableUsers}
+        onSearchPeople={loadPeopleForSelection}
+        isLoading={peopleLoading}
+      />
+
+      {/* File Fields using FileContext */}
+      <ApperFile
+        fieldId="files_1_c"
+        label="Files 1"
+        maxFiles={50}
+        allowedTypes={['pdf', 'jpg', 'png', 'doc', 'docx', 'xlsx', 'txt']}
+        disabled={isSubmitting}
+        allowMultiple={true}
+      />
+      
+      <ApperFile
+        fieldId="files_4_c"
+        label="Files 2"
+        maxFiles={50}
+        allowedTypes={['pdf', 'jpg', 'png', 'doc', 'docx', 'xlsx', 'txt']}
+        disabled={isSubmitting} 
+        allowMultiple={true}
+      />
+
+      <div className="flex justify-end space-x-3 pt-4">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setIsModalOpen(false)}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          variant="primary"
+          loading={isSubmitting}
+        >
+          Create Contact
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+const ContactsContent = () => {
   const { getWhereGroups } = useTable();
+  const { getAllFiles, clearAllFields } = useFileContext();
   const [contacts, setContacts] = useState([]);
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,26 +170,6 @@ const Contacts = () => {
   const [selectedPeople, setSelectedPeople] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [peopleLoading, setPeopleLoading] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState([]);
-
-  // Memoize the file change handler to prevent infinite re-renders
-  const handleFilesChange = useCallback((files) => {
-    
-    // Prevent updates during render by using a timeout
-    setTimeout(() => {
-      setUploadedFiles(prevFiles => {
-        // Always update to the latest files state from the uploader
-        // This ensures we stay in sync with file additions, removals, and uploads
-        const filesArray = Array.isArray(files) ? files : [];
-        
-        // Only update if files have actually changed to prevent unnecessary re-renders
-        if (JSON.stringify(prevFiles) !== JSON.stringify(filesArray)) {
-          return filesArray;
-        }
-        return prevFiles;
-      });
-    }, 0);
-  }, []);
 
   const loadContacts = async () => {
     try {
@@ -195,10 +294,14 @@ case 'created':
     try {
       setIsSubmitting(true);
       
+      // Get all files from context
+      const allFiles = getAllFiles();
+      
       const newContact = await contactService.create({
         ...formData,
         people_3: selectedPeople,
-        files_1_c: uploadedFiles // This now contains the latest state from the uploader
+        files_1_c: allFiles.files_1_c || [], // Files from first uploader
+        files_4_c: allFiles.files_4_c || []  // Files from second uploader
       });
       setContacts(prev => [newContact, ...prev]);
       setIsModalOpen(false);
@@ -211,7 +314,7 @@ case 'created':
         tags: []
       });
       setSelectedPeople([]);
-      setUploadedFiles([]);
+      clearAllFields(); // Clear all file fields
       toast.success('Contact created successfully');
     } catch (err) {
       toast.error('Failed to create Contact');
@@ -453,94 +556,19 @@ activeTab={statusFilter}
         title="Add New Contact"
         size="md"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Full Name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              error={formErrors.name}
-              required
-            />
-            <Input
-              label="Email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              error={formErrors.email}
-              required
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Phone"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              error={formErrors.phone}
-              required
-            />
-            <Input
-              label="Company"
-              value={formData.company}
-              onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-              error={formErrors.company}
-              required
-            />
-          </div>
-
-          <Select
-            label="Status"
-            value={formData.status}
-            onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-            options={[
-              { value: 'prospect', label: 'Prospect' },
-              { value: 'active', label: 'Active' },
-              { value: 'inactive', label: 'Inactive' }
-            ]}
-          />
-
-          {/* People Field */}
-          <PeopleField
-            label="People 3"
-            selectedPeople={selectedPeople}
-            onSelectionChange={setSelectedPeople}
-            isMultiple={true}
-            placeholder="Add People..."
-            showCheckbox={true}
-            availableUsers={availableUsers}
-            onSearchPeople={loadPeopleForSelection}
-            isLoading={peopleLoading}
-          />
-
-          {/* File Field */}
-          <ApperFile
-            label="Files"
-            initialFiles={uploadedFiles}
-            onFilesChange={handleFilesChange}
-            maxFiles={50}
-            allowedTypes={['pdf', 'jpg', 'png', 'doc', 'docx', 'xlsx', 'txt']}
-            disabled={isSubmitting}
-          />
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setIsModalOpen(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={isSubmitting}
->
-              Create Contact
-            </Button>
-          </div>
-        </form>
+        <ContactForm
+          formData={formData}
+          setFormData={setFormData}
+          formErrors={formErrors}
+          isSubmitting={isSubmitting}
+          selectedPeople={selectedPeople}
+          setSelectedPeople={setSelectedPeople}
+          availableUsers={availableUsers}
+          peopleLoading={peopleLoading}
+          loadPeopleForSelection={loadPeopleForSelection}
+          handleSubmit={handleSubmit}
+          setIsModalOpen={setIsModalOpen}
+        />
       </Modal>
 
       {/* Email Composer Modal */}
@@ -564,6 +592,15 @@ activeTab={statusFilter}
     </div>
   );
 };
+// Main wrapper component with FileProvider
+const Contacts = () => {
+  return (
+    <FileProvider>
+      <ContactsContent />
+    </FileProvider>
+  );
+};
+
 export default Contacts;
 
 

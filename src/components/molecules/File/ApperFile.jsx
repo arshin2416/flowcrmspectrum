@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ApperIcon from '@/components/ApperIcon';
 import Button from '@/components/atoms/Button';
-// import { FileFieldUtils } from '@/services/utils/fileFieldUtils';
+import { useFileContext } from '@/contexts/FileContext';
 
-const { ApperFileUploader, ApperClient, ApperUtilities } = window.ApperSDK;
+const { ApperFileUploader, ApperClient } = window.ApperSDK;
 
 const ApperFile = ({ 
+    fieldId, // Required: unique identifier for this file field
     label = "Files", 
     initialFiles = [], 
     onFilesChange = () => {}, 
@@ -14,13 +15,33 @@ const ApperFile = ({
     allowedTypes = ['pdf', 'jpg', 'png', 'doc', 'docx'],
     isRequired = false,
     error = null,
-    disabled = false
+    disabled = false,
+    targetElementId = null, // Will be auto-generated if not provided
+    allowMultiple = false
 }) => {
     const [apperClient, setApperClient] = useState(null);
     const [isReady, setIsReady] = useState(false);
-    const [uploaderError, setUploaderError] = useState(null);
-    const [uploadedFiles, setUploadedFiles] = useState([]);
-    const [isUploading, setIsUploading] = useState(false);
+    
+    // Use FileContext instead of local state
+    const { 
+        initializeField, 
+        updateFiles, 
+        getFieldState, 
+        setUploading, 
+        setError 
+    } = useFileContext();
+    
+    // Get field state from context
+    const fieldState = getFieldState(fieldId);
+    const { files: uploadedFiles, isUploading, error: uploaderError } = fieldState;
+    
+    // Generate unique target element ID if not provided
+    const elementId = targetElementId || `file-uploader-${fieldId}`;
+
+    // Validate required fieldId prop
+    if (!fieldId) {
+        throw new Error('ApperFile: fieldId prop is required');
+    }
 
     // Initialize ApperClient and store it in state
     useEffect(() => {
@@ -44,21 +65,25 @@ const ApperFile = ({
                 
             } catch (err) {
                 console.error('❌ Failed to initialize ApperClient:', err);
-                setError(`Initialization failed: ${err.message}`);
+                setError(fieldId, `Initialization failed: ${err.message}`);
             }
         };
 
         initializeClient();
-    }, []);
-    // Initialize uploaded files from props (don't notify parent on initial load)
+    }, [fieldId, setError]);
+
+    // Initialize the field in context and handle initial files
     useEffect(() => {
-        if (initialFiles && Array.isArray(initialFiles)) {
-            
+        // Initialize field in context
+        initializeField(fieldId, []);
+        
+        // Handle initial files if provided
+        if (initialFiles && Array.isArray(initialFiles) && initialFiles.length > 0) {
             // Check if initialFiles are already in UI format or need conversion
             let formattedFiles;
-            if (initialFiles.length > 0 && initialFiles[0].Id !== undefined) {
+            if (initialFiles[0].Id !== undefined) {
                 // These are API format files, convert to UI format
-                formattedFiles = ApperUtilities.fileField.toUIFormat(initialFiles);
+                formattedFiles = ApperFileUploader.toUIFormat(initialFiles);
             } else {
                 // These are already UI format files, use as-is but ensure they have all required properties
                 formattedFiles = initialFiles.map(file => ({
@@ -73,16 +98,17 @@ const ApperFile = ({
                 }));
             }
             
-            
-            setUploadedFiles(prevFiles => {
-                // Only update if files have actually changed and prevent notification during initialization
-                if (JSON.stringify(prevFiles) !== JSON.stringify(formattedFiles)) {
-                    return formattedFiles;
-                }
-                return prevFiles;
-            });
+            // Update files in context
+            updateFiles(fieldId, formattedFiles);
         }
-    }, [initialFiles]);
+    }, [fieldId, initializeField, updateFiles]); // Removed initialFiles from deps to prevent loops
+
+    // Notify parent component when files change
+    useEffect(() => {
+        if (typeof onFilesChange === 'function') {
+            onFilesChange(uploadedFiles);
+        }
+    }, [uploadedFiles, onFilesChange]);
 
     useEffect(() => {
         if (isReady && !disabled) {
@@ -90,38 +116,33 @@ const ApperFile = ({
         }
     }, [isReady, disabled]);
 
-    // Helper function to update files and notify parent
-    const updateFiles = (newFiles) => {
-        setUploadedFiles(newFiles);
-        // Use timeout to prevent setState during render
-        setTimeout(() => {
-            if (typeof onFilesChange === 'function') {
-                onFilesChange(newFiles);
-            }
-        }, 0);
+    // Helper function to update files in context
+    const handleFilesUpdate = (newFiles) => {
+        updateFiles(fieldId, newFiles);
     };
 
     // Remove a file from the uploaded files
     const removeFile = (fileId) => {
-        const newFiles = ApperUtilities.fileField.removeFile(uploadedFiles, fileId);
-        updateFiles(newFiles);
+        const newFiles = ApperFileUploader.removeFile(uploadedFiles, fileId);
+        handleFilesUpdate(newFiles);
     };
 
     // Show file uploader UI
     const showUploader = async () => {
+        
         if (!apperClient) {
             console.warn('ApperClient not ready yet!');
             return;
         }
 
         try {
-            setUploaderError(null);
+            setError(fieldId, null);
 
             const config = {
                 // UI Configuration
                 title: 'Upload',
                 description: 'Select files to upload',
-                allowMultiple: true, //value from the fields property
+                allowMultiple: allowMultiple, //value from the fields property
                 maxFiles: 50, //by default 50
                 maxFileSize: maxFileSize,
                 allowedTypes: allowedTypes,
@@ -141,15 +162,15 @@ const ApperFile = ({
                     apperClient: apperClient,
                 },
                 
-                // NEW: File state change callback
+                // File state change callback
                 onUploadedFilesChanged: (files) => {
-                    updateFiles(files);
+                    handleFilesUpdate(files);
                 },
                 
                 // Event Callbacks
                 onSuccess: (results) => {
                     console.log('✅ Upload successful:', results);
-                    setIsUploading(false);
+                    setUploading(fieldId, false);
                     
                     // Note: File state updates are now primarily handled by onUploadedFilesChanged callback
                     // This ensures we always have the latest state from the uploader component
@@ -157,18 +178,17 @@ const ApperFile = ({
                 
                 onError: (error) => {
                     console.error('❌ Upload failed:', error);
-                    setIsUploading(false);
-                    setUploaderError(error.message || 'Upload failed');
+                    setUploading(fieldId, false);
+                    setError(fieldId, error.message || 'Upload failed');
                 },
 
                 onProgress: (progress) => {
-                    setIsUploading(true);
+                    setUploading(fieldId, true);
                 }
             };
-
             // Mount the Vue component in React
             await ApperFileUploader.showFileUploader(
-                'file-uploader-container',
+                elementId,
                 config
             );
             
@@ -176,19 +196,19 @@ const ApperFile = ({
 
         } catch (err) {
             console.error('❌ Failed to show uploader:', err);
-            setUploaderError(`Failed to show uploader: ${err.message}`);
+            setError(fieldId, `Failed to show uploader: ${err.message}`);
         }
     };
 
     // Reset uploader
-    const resetUploader = () => {
-        const container = document.getElementById('file-uploader-container');
-        if (container) {
-            container.innerHTML = '';
-        }
-        setUploaderError(null);
-        updateFiles([]);
-    };
+    // const resetUploader = () => {
+    //     const container = document.getElementById(elementId);
+    //     if (container) {
+    //         container.innerHTML = '';
+    //     }
+    //     setError(fieldId, null);
+    //     handleFilesUpdate([]);
+    // };
 
     // Refresh uploader with current files
     const refreshUploader = async () => {
@@ -229,7 +249,7 @@ const ApperFile = ({
 
             {/* File Uploader Container */}
             <div 
-                id="file-uploader-container"
+                id={elementId}
                 className={`min-h-[200px] border-2 border-dashed border-slate-300 rounded-lg ${
                     disabled ? 'bg-slate-50 opacity-50' : 'bg-white'
                 }`}

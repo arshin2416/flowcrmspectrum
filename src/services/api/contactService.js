@@ -1,5 +1,4 @@
-import { FileFieldUtils } from '../utils/fileFieldUtils';
-const { ApperFileUploader, ApperClient, ApperUtilities } = window.ApperSDK;
+const { ApperFileUploader, ApperClient } = window.ApperSDK;
 
 // Utility functions for people field handling
 const PeopleFieldUtils = {
@@ -101,6 +100,7 @@ export const contactService = {
           { field: { Name: "score_rollup" } },
           { field: { Name: "invoicenumber" } },
           { field: { Name: "files_1_c" } },
+          { field: { Name: "files_4_c" } },
        
         ],
         orderBy: [
@@ -148,6 +148,7 @@ if (!response.success) {
           { field: { Name: "score_rollup" } },
           { field: { Name: "invoicenumber" } },
           { field: { Name: "files_1_c" } },
+          { field: { Name: "files_4_c" } },
         ]
       };
       
@@ -177,7 +178,8 @@ if (!response.success) {
         Formula1: contact.Formula1 || '',
         score_rollup: contact.score_rollup || '',
         invoicenumber: contact.invoicenumber || '',
-        files_1_c: contact.files_1_c || []
+        files_1_c: contact.files_1_c || [],
+        files_4_c: contact.files_4_c || []
       };
     } catch (error) {
       if (error?.response?.data?.message) {
@@ -209,7 +211,8 @@ if (!response.success) {
         Tags: contactData.tags ? contactData.tags.join(',') : '',
         created_at: new Date().toISOString(),
         people_3: PeopleFieldUtils.toCreateFormat(contactData.people_3),
-        files_1_c: ApperUtilities.fileField.toCreateFormat(contactData.files_1_c)
+        files_1_c: ApperFileUploader.toCreateFormat(contactData.files_1_c),
+        files_4_c: ApperFileUploader.toCreateFormat(contactData.files_4_c)
       };
       
       
@@ -248,7 +251,8 @@ if (!response.success) {
             Formula1: newContact.Formula1 || '',
             score_rollup: newContact.score_rollup || '',
             invoicenumber: newContact.invoicenumber || '',
-            files_1_c: newContact.files_1_c || []
+            files_1_c: newContact.files_1_c || [],
+            files_4_c: newContact.files_4_c || []
           };
         }
       }
@@ -285,7 +289,9 @@ if (!response.success) {
         status: contactData.status,
         Tags: contactData.tags ? contactData.tags.join(',') : '',
         people_3: PeopleFieldUtils.toUpdateFormat(contactData.people_3, contactData.originalPeople3),
-        files_1_c: ApperUtilities.fileField.toUpdateFormat(contactData.files_1_c, contactData.originalFiles1C)
+        files_1_c: ApperFileUploader.toUpdateFormat(contactData.files_1_c, contactData.originalFiles1C),
+        files_4_c: ApperFileUploader.toUpdateFormat(contactData.files_4_c, contactData.originalFiles4C)
+
       };
       
       const params = {
@@ -323,7 +329,8 @@ if (!response.success) {
             Formula1: updatedContact.Formula1 || '',
             score_rollup: updatedContact.score_rollup || '',
             invoicenumber: updatedContact.invoicenumber || '',
-            files_1_c: updatedContact.files_1_c || []
+            files_1_c: updatedContact.files_1_c || [],
+            files_4_c: updatedContact.files_4_c || []
           };
         }
       }
