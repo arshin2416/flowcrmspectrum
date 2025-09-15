@@ -230,6 +230,30 @@ case 'created':
     }
   };
 
+  const getEdgeFunction = async () => {
+    
+    const { ApperClient } = window.ApperSDK;
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+
+    
+const userData = {
+  name: 'John Doe',
+  email: 'john@example.com'
+};
+
+const result = await apperClient.functions.invoke('create-user', {
+    method: 'POST',
+    body: userData,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+    console.log(result);
+  };
+
   const statusTabs = [
     { label: 'All', value: 'all', count: contacts.length },
     { label: 'Active', value: 'active', count: contacts.filter(c => c.status === 'active').length },
@@ -503,8 +527,17 @@ activeTab={statusFilter}
               loading={isSubmitting}
 >
               Create Contact
+
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              onClick={getEdgeFunction}
+>
+              get edge function
             </Button>
           </div>
+        
         </form>
       </Modal>
 
